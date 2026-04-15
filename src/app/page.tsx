@@ -1,52 +1,134 @@
-import Link from "next/link";
+import { type Metadata } from "next";
 
-import { LatestPost } from "~/app/_components/post";
 import { api, HydrateClient } from "~/trpc/server";
+import { HeroSection } from "~/components/blocks/HeroSection";
+import { ProjectCard } from "~/components/blocks/ProjectCard";
+
+// Helper function to extract small metric labels from seeded sentences
+function parseMetrics(impact: string | null, scale: string | null) {
+  const metrics = [];
+  
+  if (impact) {
+    if (impact.includes("100/100")) metrics.push({ value: "100/100", label: "Lighthouse" });
+    else if (impact.includes("40%")) metrics.push({ value: "40%", label: "Engagement" });
+    else if (impact.includes("Eliminated")) metrics.push({ value: "0ms", label: "Delay" });
+    else metrics.push({ value: "Max", label: "Impact" });
+  }
+
+  if (scale) {
+    if (scale.includes("4K")) metrics.push({ value: "4K", label: "Resolution" });
+    else if (scale.includes("10+")) metrics.push({ value: "10+", label: "Components" });
+    else metrics.push({ value: "100%", label: "Consistency" });
+  }
+
+  return metrics;
+}
+
+export const metadata: Metadata = {
+  title: "Identity | Senior Full-Stack Engineer & AI Integration Specialist",
+  description:
+    "I build edge-first, AI-integrated systems with Next.js and TypeScript. RAG pipelines with pgvector. WCAG 2.2 AA accessibility. Production-grade architectures.",
+  openGraph: {
+    title: "Identity | Senior Full-Stack Engineer",
+    description:
+      "I build edge-first, AI-integrated systems with Next.js and TypeScript. RAG pipelines with pgvector.",
+    type: "profile",
+  },
+  keywords: [
+    "Next.js",
+    "TypeScript",
+    "RAG Pipeline",
+    "pgvector",
+    "Agentic AI",
+    "Edge Computing",
+    "WCAG Accessibility",
+    "Full-Stack Developer",
+  ],
+};
 
 export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-
-  void api.post.getLatest.prefetch();
+  const projects = await api.project.getAll();
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p>
-          </div>
+      <main className="flex min-h-screen flex-col bg-neutral-950 text-neutral-100">
+        {/* Structured Data for AI Agents */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              name: "Benjamin Ofili",
+              jobTitle: "Senior Full-Stack Engineer",
+              description:
+                "I build edge-first, AI-integrated systems with Next.js and TypeScript.",
+              knowsAbout: [
+                "Next.js",
+                "React",
+                "TypeScript",
+                "Retrieval-Augmented Generation",
+                "pgvector",
+                "Edge Computing",
+                "WCAG 2.2 Accessibility",
+                "Agentic AI Systems",
+              ],
+              alumniOf: {
+                "@type": "Organization",
+                name: "Your University",
+              },
+              url: "https://yourportfolio.com",
+              sameAs: [
+                "https://github.com/yourusername",
+                "https://linkedin.com/in/yourusername",
+              ],
+            }),
+          }}
+        />
+        <HeroSection />
 
-          <LatestPost />
-        </div>
+        {/* ── Chapter 02: The Lab ────────────────────────────────────────── */}
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+          .id-font-display { font-family: 'Instrument Serif', Georgia, serif; }
+          .id-font-mono    { font-family: 'DM Mono', 'Courier New', monospace; }
+        `}</style>
+        <section id="lab" aria-labelledby="lab-heading" className="mx-auto w-full max-w-7xl px-6 pb-32 md:px-14 lg:px-20">
+          <header className="mb-14">
+            <div className="mb-14 flex items-center gap-3">
+              <span className="id-font-mono text-xs tracking-widest text-neutral-600 uppercase">
+                Chapter 02
+              </span>
+              <span aria-hidden="true" className="h-px w-6 bg-neutral-800" />
+              <span className="id-font-mono text-xs tracking-widest text-emerald-500 uppercase">
+                The Lab
+              </span>
+            </div>
+            <h2 id="lab-heading" className="id-font-display text-5xl leading-tight text-neutral-50 sm:text-6xl">
+              Shipped Architecture
+            </h2>
+            <p className="id-font-mono mt-4 max-w-2xl text-sm font-light leading-relaxed text-neutral-400">
+              A selection of production-grade systems built with Next.js, Edge compute, and AI integrations. Monitored for performance and strictly typed.
+            </p>
+          </header>
+
+          <div className="mt-12 grid grid-cols-1 gap-px bg-neutral-800 lg:grid-cols-2">
+            {projects.map((project, index) => (
+              <ProjectCard
+                key={project.slug}
+                index={index + 1}
+                title={project.title}
+                tagline={project.tagline}
+                role={project.role}
+                timeframe={project.timeframe}
+                techStack={project.techStack}
+                metrics={parseMetrics(project.impactMetric, project.scaleMetric)}
+                caseStudyHref={`/lab/${project.slug}`}
+                featured={project.featured}
+              />
+            ))}
+          </div>
+        </section>
       </main>
     </HydrateClient>
   );
