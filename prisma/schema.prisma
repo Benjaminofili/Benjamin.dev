@@ -1,0 +1,151 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL") // For connection pooling with Supabase
+  extensions = [pgvector(map: "vector", schema: "public")]
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum ProjectRole {
+  SOLO_DEVELOPER
+  LEAD_ENGINEER
+  CONTRIBUTOR
+}
+
+enum ArticleCategory {
+  TECHNICAL
+  CRITIQUE
+  DEBUGGING
+}
+
+// ============================================================================
+// PROJECT MODEL (For "The Lab" Chapter)
+// ============================================================================
+
+model Project {
+  id          String      @id @default(uuid()) @db.Uuid
+  title       String      @db.VarChar(60)
+  slug        String      @unique @db.VarChar(100)
+  tagline     String      @db.VarChar(200)
+  
+  // Content
+  fullDescription   String  @db.Text
+  caseStudyContent  String? @db.Text
+  
+  // Metadata
+  role              ProjectRole
+  techStack         String[] // PostgreSQL array type
+  
+  // URLs
+  liveUrl           String? @db.VarChar(500)
+  repositoryUrl     String? @db.VarChar(500)
+  thumbnailUrl      String  @db.VarChar(500)
+  
+  // Dates & Metrics
+  completedDate     DateTime @db.Date
+  timeframe         String   @db.VarChar(50) // e.g., "2 weeks", "1 month"
+  impactMetric      String?  @db.VarChar(200)
+  scaleMetric       String?  @db.VarChar(200)
+  
+  // Display
+  featured          Boolean  @default(false)
+  displayOrder      Int
+  
+  // Timestamps
+  createdAt         DateTime @default(now()) @db.Timestamptz
+  updatedAt         DateTime @updatedAt @db.Timestamptz
+
+  @@index([slug])
+  @@index([featured])
+  @@index([displayOrder])
+  @@map("projects")
+}
+
+// ============================================================================
+// ARTICLE MODEL (For "The Lens" Chapter)
+// ============================================================================
+
+model Article {
+  id               String          @id @default(uuid()) @db.Uuid
+  title            String          @db.VarChar(100)
+  slug             String          @unique @db.VarChar(150)
+  excerpt          String          @db.VarChar(300)
+  body             String          @db.Text
+  
+  // Classification
+  category         ArticleCategory
+  tags             String[] // PostgreSQL array type
+  
+  // Media
+  coverImageUrl    String?         @db.VarChar(500)
+  
+  // Metrics
+  readTimeMinutes  Int
+  viewCount        Int             @default(0)
+  
+  // Timestamps
+  publishedAt      DateTime        @db.Timestamptz
+  updatedAt        DateTime        @updatedAt @db.Timestamptz
+
+  @@index([slug])
+  @@index([publishedAt(sort: Desc)])
+  @@index([category])
+  @@map("articles")
+}
+
+// ============================================================================
+// DOCUMENT CHUNK MODEL (For RAG AI Pipeline)
+// ============================================================================
+
+model DocumentChunk {
+  id        String                           @id @default(uuid()) @db.Uuid
+  content   String                           @db.Text
+  
+  // Metadata stored as JSONB
+  // Structure: { type: 'project' | 'article', id: string, title: string }
+  metadata  Json                             @db.JsonB
+  
+  // Vector embedding (1536 dimensions for OpenAI text-embedding-3-small)
+  // Prisma does not natively support pgvector, so we use Unsupported
+  embedding Unsupported("vector(1536)")
+  
+  // Timestamp
+  createdAt DateTime                         @default(now()) @db.Timestamptz
+
+  @@map("document_chunks")
+}
+
+// ============================================================================
+// CONTACT FORM SUBMISSION MODEL (Optional, for tracking inquiries)
+// ============================================================================
+
+model ContactSubmission {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(100)
+  email        String    @db.VarChar(255)
+  company      String?   @db.VarChar(150)
+  message      String    @db.Text
+  
+  // Tracking
+  source       String?   @db.VarChar(50) // 'contact_form' | 'ai_chat'
+  ipAddress    String?   @db.Inet
+  userAgent    String?   @db.Text
+  
+  // Timestamps
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  respondedAt  DateTime? @db.Timestamptz
+
+  @@index([createdAt(sort: Desc)])
+  @@map("contact_submissions")
+}
