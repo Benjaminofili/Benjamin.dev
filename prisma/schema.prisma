@@ -116,9 +116,9 @@ model DocumentChunk {
   // Structure: { type: 'project' | 'article', id: string, title: string }
   metadata  Json                             @db.JsonB
   
-  // Vector embedding (1536 dimensions for OpenAI text-embedding-3-small)
+  // Vector embedding (768 dimensions for Gemini text-embedding-004)
   // Prisma does not natively support pgvector, so we use Unsupported
-  embedding Unsupported("vector(1536)")
+  embedding Unsupported("vector(768)")
   
   // Timestamp
   createdAt DateTime                         @default(now()) @db.Timestamptz
