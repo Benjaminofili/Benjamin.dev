@@ -3,6 +3,10 @@ import { type Metadata } from "next";
 import { api, HydrateClient } from "~/trpc/server";
 import { HeroSection } from "~/components/blocks/HeroSection";
 import { ProjectCard } from "~/components/blocks/ProjectCard";
+import TheWorkshop from "~/components/TheWorkshop";
+import { ArticleCard, type ArticleCardProps } from "~/components/ArticleCard";
+
+import TheLens from "~/components/blocks/TheLens";
 
 // Helper function to extract small metric labels from seeded sentences
 function parseMetrics(impact: string | null, scale: string | null) {
@@ -87,7 +91,12 @@ export default async function Home() {
         />
         <HeroSection />
 
-        {/* ── Chapter 02: The Lab ────────────────────────────────────────── */}
+        {/* ── Chapter 02: The Workshop ───────────────────────────────────── */}
+        <section id="workshop">
+          <TheWorkshop />
+        </section>
+
+        {/* ── Chapter 03: The Lab ────────────────────────────────────────── */}
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
           .id-font-display { font-family: 'Instrument Serif', Georgia, serif; }
@@ -97,7 +106,7 @@ export default async function Home() {
           <header className="mb-14">
             <div className="mb-14 flex items-center gap-3">
               <span className="id-font-mono text-xs tracking-widest text-neutral-600 uppercase">
-                Chapter 02
+                Chapter 03
               </span>
               <span aria-hidden="true" className="h-px w-6 bg-neutral-800" />
               <span className="id-font-mono text-xs tracking-widest text-emerald-500 uppercase">
@@ -127,8 +136,15 @@ export default async function Home() {
                 featured={project.featured}
               />
             ))}
+            {/* Filler to hide container background on odd-count grids */}
+            {projects.length % 2 !== 0 && (
+              <div className="hidden bg-neutral-950 lg:block" aria-hidden="true" />
+            )}
           </div>
         </section>
+
+        {/* ── Chapter 04: The Lens ────────────────────────────────────────── */}
+        <TheLens />
       </main>
     </HydrateClient>
   );

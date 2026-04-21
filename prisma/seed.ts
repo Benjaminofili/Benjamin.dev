@@ -157,63 +157,51 @@ Standardized implementation patterns with shadcn/ui + Tailwind to accelerate fut
 
   const seededArticles = await Promise.all([
     prisma.article.upsert({
-      where: { slug: "hardest-bug-react-18-race-condition-postmortem" },
+      where: { slug: "why-i-replaced-rest-with-trpc" },
       update: {},
       create: {
-        title: "Hardest Bug: React 18 Race Condition Postmortem",
-        slug: "hardest-bug-react-18-race-condition-postmortem",
+        title: "Why I Replaced REST with tRPC Across Every Internal API",
+        slug: "why-i-replaced-rest-with-trpc",
         excerpt:
-          "A production debugging narrative on stale promise orchestration, suspense waterfalls, and how typed query boundaries eliminated nondeterministic UI failures.",
-        body: `## Incident Overview
-During a frontend migration to concurrent rendering, we observed non-deterministic dashboard tear-downs under rapid route transitions. The failure signature looked random, but it was reproducible under synthetic navigation bursts.
-
-## Hypothesis and Reproduction
-We instrumented transition boundaries and identified overlapping suspense states. A stale in-memory cache key was being evicted while a sibling transition still referenced the pending promise, causing hydration mismatch and local state reset.
-
-## Root Cause
-The architecture mixed ad-hoc promise caching with Suspense semantics. That violated ownership boundaries: cache lifetime and render lifetime were managed by different abstractions.
-
-## Remediation
-We migrated to TanStack Query for authoritative cache ownership, normalized query keys, and added cancellation-safe invalidation. We also wrapped route transitions with deterministic loading boundaries and error segmentation.
-
-## Outcome
-The issue dropped from intermittent production incidents to zero regressions over the next release cycle, with faster diagnostics thanks to explicit query and transition telemetry.`,
-        category: ArticleCategory.DEBUGGING,
-        tags: ["React 18", "Suspense", "TanStack Query", "Postmortem", "Debugging"],
-        coverImageUrl: "/articles/react-18-race-condition.webp",
-        readTimeMinutes: 9,
-        viewCount: 1842,
-        publishedAt: new Date("2025-11-08T09:00:00.000Z"),
+          "Type safety at the client/server boundary is not a preference. It is a structural requirement for teams that move fast without breaking contracts.",
+        body: "REST APIs have been the standard for a long time, but they have major drawbacks when it comes to type safety. By migrating to tRPC, we eliminated an entire class of runtime errors and improved our development velocity. The tight coupling between frontend and backend code through shared TypeScript types creates an unbreakable contract that gives teams confidence to ship faster and refactor aggressively without fear of breaking changes.",
+        category: ArticleCategory.TECHNICAL,
+        tags: ["tRPC", "TypeScript", "REST", "API Architecture"],
+        readTimeMinutes: 7,
+        viewCount: 3841,
+        publishedAt: new Date("2025-03-01T09:00:00.000Z"),
       },
     }),
     prisma.article.upsert({
-      where: { slug: "ui-ux-critique-accessible-modal-systems" },
+      where: { slug: "debugging-silent-race-condition-rag-pipeline" },
       update: {},
       create: {
-        title: "UI/UX Critique: Accessible Modal Systems That Actually Hold Up",
-        slug: "ui-ux-critique-accessible-modal-systems",
+        title: "Debugging a Silent Race Condition in a RAG Retrieval Pipeline",
+        slug: "debugging-silent-race-condition-rag-pipeline",
         excerpt:
-          "A technical critique of modal implementations that pass visual QA but fail keyboard, focus, and assistive technology behavior in production.",
-        body: `## Why This Critique Exists
-Most modal implementations look polished but collapse under accessibility scrutiny. Teams often optimize for visual parity and ignore behavioral contracts required for keyboard and assistive technology users.
-
-## Common Failure Modes
-Frequent regressions include focus escaping to background content, missing dialog announcements, broken return-focus logic, and disabled scroll controls that trap touch users.
-
-## Engineering Standards for Reliable Modals
-Use a strict modal contract: initial focus target, tab loop containment, escape semantics, inert background behavior, and focus restoration on close. Treat each as testable acceptance criteria.
-
-## Recommended Implementation Strategy
-Prefer battle-tested primitives (Radix Dialog or native dialog with strong polyfill strategy). Add integration tests for keyboard traversal and screen-reader snapshots as part of CI, not manual QA.
-
-## Resulting UX Impact
-Teams that adopt this modal contract reduce accessibility regressions, improve form completion rates in overlays, and avoid costly post-release hotfixes tied to interaction traps.`,
+          "The vector search returned correct results. The reranker scored them correctly. The context window was still wrong. A debugging narrative.",
+        body: "Building a reliable Retrieval-Augmented Generation (RAG) pipeline is notoriously difficult. In this deep dive, I recount a particularly nasty race condition where the retrieval phase and the reranking phase became subtly unsynchronized under high load. We'll explore the telemetry we used to track down the issue, the asynchronous operations that caused it, and the architectural changes we implemented to guarantee data consistency in the prompt context.",
+        category: ArticleCategory.DEBUGGING,
+        tags: ["RAG", "LLMs", "Vector Search", "Debugging", "Concurrency"],
+        readTimeMinutes: 11,
+        viewCount: 1204,
+        publishedAt: new Date("2025-01-15T09:00:00.000Z"),
+      },
+    }),
+    prisma.article.upsert({
+      where: { slug: "hidden-cost-of-hydration-critique" },
+      update: {},
+      create: {
+        title: "The Hidden Cost of Hydration: A Critique of Client-First Frameworks",
+        slug: "hidden-cost-of-hydration-critique",
+        excerpt:
+          "Every byte hydrated on the client is a tax. This is an analysis of where that tax is justified and where it is architectural debt.",
+        body: "Client-side rendering frameworks revolutionized web development, but the hydration process is not free. In fact, it's often the single largest bottleneck for initial interaction. This critique examines the performance implications of shipping large JavaScript bundles merely to attach event listeners to static markup. We'll explore alternative architectures like React Server Components and partial hydration (islands architecture) that offer a more balanced approach to interactivity.",
         category: ArticleCategory.CRITIQUE,
-        tags: ["Accessibility", "WCAG", "UI/UX", "Radix UI", "Frontend Architecture"],
-        coverImageUrl: "/articles/accessibility-modal-critique.webp",
-        readTimeMinutes: 7,
-        viewCount: 1297,
-        publishedAt: new Date("2025-11-21T09:00:00.000Z"),
+        tags: ["React", "Performance", "Hydration", "Architecture", "RSC"],
+        readTimeMinutes: 9,
+        viewCount: 6712,
+        publishedAt: new Date("2024-11-10T09:00:00.000Z"),
       },
     }),
   ]);

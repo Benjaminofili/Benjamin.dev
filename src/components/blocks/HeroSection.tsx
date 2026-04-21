@@ -152,20 +152,39 @@ export function HeroSection() {
               </p>
 
               {/* ── Call-to-Action row ──────────────────────────────── */}
-              <div className="id-rise id-d4 mt-10 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <div className="id-rise id-d4 mt-10 flex flex-wrap items-center gap-4">
 
-                {/* Primary CTA — The Lab */}
-                <Link href="#lab" aria-label="View The Lab — project showcase">
+                {/* Primary CTA — The Workshop */}
+                <Link href="#workshop" aria-label="View The Workshop — architectural audit">
                   <Button
                     size="lg"
                     className="id-cta-primary id-font-mono rounded-none bg-emerald-500 px-8 text-sm font-medium tracking-wide text-neutral-950 transition-all duration-200 hover:bg-emerald-400 focus-visible:outline-none"
                   >
-                    View The Lab
-                    <span aria-hidden="true" className="ml-2">→</span>
+                    View The Workshop
                   </Button>
                 </Link>
 
-                {/* Secondary badge — featured project */}
+                {/* Secondary CTA — The Lab */}
+                <Link href="#lab" aria-label="View The Lab — project showcase">
+                  <Button
+                    className="id-font-mono rounded-none border border-neutral-800 bg-transparent px-8 text-sm font-medium tracking-wide text-neutral-400 transition-all duration-200 hover:border-neutral-700 hover:bg-neutral-900/50 hover:text-neutral-100 focus-visible:outline-none"
+                  >
+                    The Lab
+                  </Button>
+                </Link>
+
+                {/* Secondary CTA — The Lens */}
+                <Link href="#lens" aria-label="View The Lens — editorial index">
+                  <Button
+                    className="id-font-mono rounded-none border border-neutral-800 bg-transparent px-8 text-sm font-medium tracking-wide text-neutral-400 transition-all duration-200 hover:border-neutral-700 hover:bg-neutral-900/50 hover:text-neutral-100 focus-visible:outline-none"
+                  >
+                    The Lens
+                  </Button>
+                </Link>
+
+                {/* Mobile spacer / divider on small screens could go here, but flex-wrap handles it */}
+
+                {/* Featured project badge */}
                 <Link
                   href="/lab/agentic-ai-chatbot"
                   aria-label="Featured Project: Agentic AI Chatbot"
