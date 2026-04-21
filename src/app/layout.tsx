@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { AgentChat } from "~/components/blocks/AgentChat";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -20,9 +21,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body>
+    <html lang="en" className={`${geist.variable} dark`}>
+      <body className="bg-neutral-950 text-neutral-100 antialiased">
         <TRPCReactProvider>{children}</TRPCReactProvider>
+        <AgentChat />
       </body>
     </html>
   );

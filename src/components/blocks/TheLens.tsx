@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { ArticleCard, ArticleCategory } from "~/components/ArticleCard";
+import { ArticleCard, type ArticleCategory } from "~/components/ArticleCard";
 
 const prisma = new PrismaClient();
 
