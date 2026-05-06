@@ -6,16 +6,13 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  experimental: {
-    turbopack: {
-      root: ".",
-    },
-  },
+
   images: {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**.public.blob.vercel-storage.com",
+        hostname: "*.public.blob.vercel-storage.com",
+        port: "",
       },
     ],
   },

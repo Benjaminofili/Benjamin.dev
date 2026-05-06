@@ -1,4 +1,4 @@
-import { embed, streamText, convertToModelMessages, tool, stepCountIs, type UIMessage } from "ai";
+import { embed, streamText, convertToModelMessages, tool, type UIMessage } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import { db } from "~/server/db";
@@ -106,7 +106,7 @@ function extractLatestUserText(messages: UIMessage[]): string {
     const parts = Array.isArray(message.parts) ? message.parts : [];
     const text = parts
       .filter((part): part is { type: "text"; text: string } => {
-        return part.type === "text" && typeof (part as { text?: unknown }).text === "string";
+        return part?.type === "text" && typeof (part as { text?: unknown })?.text === "string";
       })
       .map((part) => part.text)
       .join("\n")
@@ -124,7 +124,7 @@ export async function POST(request: Request): Promise<Response> {
       GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     });
 
-    const body = (await request.json()) as unknown;
+    const body = (await request.json()) as { messages: UIMessage[] };
     const { messages } = requestSchema.parse(body);
 
     const latestUserMessage = extractLatestUserText(messages);
@@ -165,7 +165,6 @@ export async function POST(request: Request): Promise<Response> {
     const result = streamText({
       model: google("gemini-2.5-flash"),
       messages: await convertToModelMessages(messages),
-      maxSteps: 5,
       system: `You are the official Agentic AI Representative for Benjamin, a Senior Full-Stack Engineer. Your personality is detail-oriented, professional, and technically precise.
 
 <core_directive>
@@ -181,7 +180,7 @@ You operate using the ReAct (Reason, Then Act) framework. You are an autonomous 
 </agentic_methodology>
 
 <context>
-${context || "No relevant context was found."}
+${context ?? "No relevant context was found."}
 </context>`,
       tools: {
         getProjectDetails: tool({

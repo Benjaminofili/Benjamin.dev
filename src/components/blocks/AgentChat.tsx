@@ -141,8 +141,9 @@ export function AgentChat() {
 
   /* Handle suggested prompt click ───────────────────────────────────── */
   function handleSuggestedPrompt(prompt: string) {
-    setInput(prompt);
+    setInput("");
     setHasInteracted(true);
+    void sendMessage({ text: prompt });
   }
 
   function getMessageText(message: UIMessage): string {
