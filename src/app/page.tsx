@@ -4,7 +4,6 @@ import { api, HydrateClient } from "~/trpc/server";
 import { HeroSection } from "~/components/blocks/HeroSection";
 import { ProjectCard } from "~/components/blocks/ProjectCard";
 import TheWorkshop from "~/components/TheWorkshop";
-import { ArticleCard, type ArticleCardProps } from "~/components/ArticleCard";
 
 import TheLens from "~/components/blocks/TheLens";
 

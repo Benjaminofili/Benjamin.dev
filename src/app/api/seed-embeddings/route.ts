@@ -1,13 +1,10 @@
 import { embed } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { db } from "~/server/db";
 
 const envSchema = z.object({
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
 type EmbeddingRow = {
@@ -66,8 +63,6 @@ export async function POST(): Promise<Response> {
   try {
     const env = envSchema.parse({
       GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-      SUPABASE_URL: process.env.SUPABASE_URL,
-      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     });
 
     const [projects, articles] = await Promise.all([
@@ -112,19 +107,8 @@ export async function POST(): Promise<Response> {
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
     });
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false },
-    });
-
-    // Temporary ingestion route: clear and repopulate for deterministic re-runs.
-    const { error: clearError } = await supabase
-      .from("document_chunks")
-      .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000");
-
-    if (clearError) {
-      throw new Error(`Failed to clear document_chunks: ${clearError.message}`);
-    }
+    // Clear and repopulate for deterministic re-runs.
+    await db.documentChunk.deleteMany();
 
     let insertedCount = 0;
     for (const row of rowsToEmbed) {
@@ -139,17 +123,13 @@ export async function POST(): Promise<Response> {
         },
       });
 
-      const { error: insertError } = await supabase.from("document_chunks").insert({
-        content: row.content,
-        metadata: row.metadata,
-        embedding: `[${embedding.join(",")}]`,
-      });
-
-      if (insertError) {
-        throw new Error(
-          `Failed to insert chunk (${row.metadata.type}:${row.metadata.id}): ${insertError.message}`,
-        );
-      }
+      // Use raw SQL for the vector embedding since Prisma doesn't natively support it
+      await db.$executeRawUnsafe(
+        `INSERT INTO document_chunks (id, content, metadata, embedding) VALUES (gen_random_uuid(), $1, $2::jsonb, $3::vector)`,
+        row.content,
+        JSON.stringify(row.metadata),
+        `[${embedding.join(",")}]`
+      );
 
       insertedCount += 1;
     }

@@ -6,6 +6,8 @@ import { api } from "~/trpc/server";
 
 /* ─── Static params for pre-rendering ─────────────────────────────────────── */
 
+export const revalidate = 86400; // Cache for 24 hours
+
 export async function generateStaticParams() {
   // Use db directly — generateStaticParams has no request context,
   // so we cannot call api.*  (which internally calls headers()).

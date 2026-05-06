@@ -56,7 +56,7 @@ const STACK_LAYERS = [
       "LangChain",
       "Google Gemini API",
       "pgvector (768 dimensions)",
-      "Supabase Vector Store",
+      "Neon Serverless Postgres",
       "Tool Calling",
       "RAG Pipelines",
     ],
@@ -67,7 +67,7 @@ const STACK_LAYERS = [
     ordinal: "03",
     description: "Data persistence, auth, and delivery pipelines.",
     technologies: [
-      "Supabase",
+      "Neon",
       "PostgreSQL",
       "Redis",
       "Prisma",
@@ -94,13 +94,13 @@ const ADRS = [
   {
     id: "adr-02",
     ordinal: "ADR-02",
-    decision: "Why Supabase & pgvector",
+    decision: "Why Neon & pgvector",
     context:
-      "The portfolio required a unified database solution with integrated storage and robust vector search capabilities for the AI chatbot.",
+      "The portfolio required a high-performance vector search engine with a serverless architecture to support ephemeral development environments and instant branching.",
     reasoning:
-      "Supabase provides a dedicated PostgreSQL database with the native pgvector extension built-in. It drastically reduces the number of disparate services needed by natively synchronizing authentication with database Row Level Security (RLS) policies, ensuring robust data protection at the lowest architectural level.",
+      "Neon provides a dedicated PostgreSQL database with native pgvector support. Unlike monolithic alternatives, Neon's branching capabilities allow for isolated schema and data testing without provisioning new instances. This serverless model perfectly aligns with the high-velocity deployment strategy while maintaining full PostgreSQL compatibility.",
     tradeoffs:
-      "Supabase operates as a monolithic architecture. Branching the database to test new features requires provisioning entirely new instances, which is operationally slower than serverless database alternatives like Neon.",
+      "While monolithic Backend-as-a-Service solutions offer integrated file storage and auth, Neon's focus on database excellence allows us to choose best-in-class separate services like Vercel Blob and Clerk, resulting in a more modular and robust architecture.",
   },
   {
     id: "adr-03",

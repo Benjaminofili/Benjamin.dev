@@ -126,7 +126,7 @@ export function AgentChat() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
     }),
@@ -159,7 +159,7 @@ export function AgentChat() {
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey && !isLoading && input.trim()) {
       e.preventDefault();
-      sendMessage({ text: input.trim() });
+      void sendMessage({ text: input.trim() });
       setInput("");
     }
   }
@@ -302,7 +302,7 @@ export function AgentChat() {
                       Agentic AI Assistant
                     </p>
                     <p className="ac-font-mono mt-1 text-xs text-neutral-600">
-                      RAG · Supabase pgvector · Gemini
+                      RAG · Neon pgvector · Gemini
                     </p>
                   </div>
                 </div>
@@ -338,7 +338,7 @@ export function AgentChat() {
                         Ask me anything.
                       </p>
                       <p className="ac-font-mono text-xs font-light leading-relaxed text-neutral-600">
-                        I have full context on this engineer's architecture decisions,
+                        I have full context on this engineer&apos;s architecture decisions,
                         projects, and technical philosophy.
                       </p>
                     </div>
@@ -421,6 +421,25 @@ export function AgentChat() {
                         <TypingIndicator />
                       </div>
                     )}
+                    
+                    {/* Error message */}
+                    {error && (
+                      <div className="ac-msg flex gap-3">
+                        <Avatar
+                          className="mt-0.5 h-6 w-6 shrink-0 rounded-none border border-red-900/50"
+                          aria-hidden="true"
+                        >
+                          <AvatarFallback className="ac-font-mono rounded-none bg-red-950/50 text-xs text-red-500">
+                            !
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="max-w-xs flex-1">
+                          <p className="ac-font-mono inline-block border border-red-900/50 bg-red-950/20 px-3 py-2.5 text-xs font-light leading-relaxed text-red-400">
+                            Connection failed. Ensure the database is active and reachable. ({error.message})
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Auto-scroll anchor */}
                     <div ref={bottomRef} aria-hidden="true" />
@@ -434,7 +453,7 @@ export function AgentChat() {
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (!isLoading && input.trim()) {
-                      sendMessage({ text: input.trim() });
+                      void sendMessage({ text: input.trim() });
                       setInput("");
                     }
                   }}
