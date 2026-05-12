@@ -49,10 +49,14 @@ type ProjectSeed = {
   fullDescription: string;
   techStack: string[];
   repositoryUrl?: string;
+  liveUrl?: string | null;
+  thumbnailUrl?: string;
+  coverImageUrl?: string | null;
   timeframe: string;
   completedDate: Date;
   displayOrder: number;
   impactMetric?: string;
+  scaleMetric?: string | null;
 };
 
 const PROJECT_SEEDS: Record<string, ProjectSeed> = {
