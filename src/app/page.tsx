@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import Link from "next/link";
 
 import { api, HydrateClient } from "~/trpc/server";
 import { HeroSection } from "~/components/blocks/HeroSection";
@@ -49,8 +50,12 @@ export const metadata: Metadata = {
   ],
 };
 
+const HOMEPAGE_PROJECT_LIMIT = 4;
+
 export default async function Home() {
-  const projects = await api.project.getAll();
+  const allProjects = await api.project.getAll();
+  const projects = allProjects.slice(0, HOMEPAGE_PROJECT_LIMIT);
+  const hasMore = allProjects.length > HOMEPAGE_PROJECT_LIMIT;
 
   return (
     <HydrateClient>
@@ -132,6 +137,7 @@ export default async function Home() {
                 techStack={project.techStack}
                 metrics={parseMetrics(project.impactMetric, project.scaleMetric)}
                 caseStudyHref={`/lab/${project.slug}`}
+                thumbnailUrl={project.thumbnailUrl}
                 featured={project.featured}
               />
             ))}
@@ -140,6 +146,28 @@ export default async function Home() {
               <div className="hidden bg-neutral-950 lg:block" aria-hidden="true" />
             )}
           </div>
+
+          {/* ── View More CTA ─────────────────────────────────────────────── */}
+          {hasMore && (
+            <div className="mt-px border-t border-neutral-800 bg-neutral-950 px-8 py-10 flex items-center justify-between">
+              <p className="id-font-mono text-xs tracking-widest text-neutral-500 uppercase">
+                Showing {projects.length} of {allProjects.length} projects
+              </p>
+              <Link
+                href="/lab"
+                className="id-font-mono group inline-flex items-center gap-3 border border-neutral-700 px-6 py-3 text-xs tracking-widest text-neutral-300 uppercase transition-all duration-300 hover:border-emerald-500 hover:text-emerald-400"
+                aria-label="View all projects in The Lab"
+              >
+                View All Projects
+                <span
+                  aria-hidden="true"
+                  className="inline-block transition-transform duration-300 group-hover:translate-x-1"
+                >
+                  →
+                </span>
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* ── Chapter 04: The Lens ────────────────────────────────────────── */}

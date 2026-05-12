@@ -10,6 +10,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
@@ -27,6 +28,7 @@ export type ProjectCardProps = {
   techStack?: string[];
   metrics?: ImpactMetric[];
   caseStudyHref: string;
+  thumbnailUrl: string;
   featured?: boolean;
 };
 
@@ -41,6 +43,7 @@ export function ProjectCard({
   techStack = [],
   metrics = [],
   caseStudyHref,
+  thumbnailUrl,
   featured = false,
 }: ProjectCardProps) {
   const ordinal = String(index).padStart(2, "0");
@@ -65,6 +68,17 @@ export function ProjectCard({
           "transparent")
       }
     >
+      {/* ── THUMBNAIL IMAGE ─────────────────────────────────────────── */}
+      <div className="relative w-full aspect-video overflow-hidden rounded-t-xl bg-neutral-900">
+        <Image
+          src={thumbnailUrl}
+          alt={`${title} thumbnail`}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 50vw"
+        />
+      </div>
+
       {/* ── TOP ROW: ordinal + metadata ─────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 px-7 pt-7">
         <span

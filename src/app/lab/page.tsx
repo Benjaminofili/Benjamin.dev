@@ -1,4 +1,5 @@
 import { type Metadata } from "next";
+import Link from "next/link";
 import { ProjectCard } from "~/components/blocks/ProjectCard";
 import { api } from "~/trpc/server";
 
@@ -38,12 +39,24 @@ export default async function TheLabPage() {
         .id-font-display { font-family: 'Instrument Serif', Georgia, serif; }
         .id-font-mono    { font-family: 'DM Mono', 'Courier New', monospace; }
       `}</style>
+
+      {/* ── Back navigation ──────────────────────────────────────────── */}
+      <nav className="mx-auto max-w-7xl px-6 pt-10 md:px-14 lg:px-20">
+        <Link
+          href="/"
+          className="id-font-mono inline-flex items-center gap-2 text-xs text-neutral-600 transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+          aria-label="Back to Home"
+        >
+          <span aria-hidden="true">←</span>
+          Home
+        </Link>
+      </nav>
       
-      <section aria-labelledby="lab-heading" className="mx-auto max-w-7xl px-6 pt-24 md:px-14 lg:px-20">
+      <section aria-labelledby="lab-heading" className="mx-auto max-w-7xl px-6 pt-12 md:px-14 lg:px-20">
         <header className="mb-14">
           <div className="mb-14 flex items-center gap-3">
             <span className="id-font-mono text-xs tracking-widest text-neutral-600 uppercase">
-              Chapter 02
+              Chapter 03
             </span>
             <span aria-hidden="true" className="h-px w-6 bg-neutral-800" />
             <span className="id-font-mono text-xs tracking-widest text-emerald-500 uppercase">
@@ -70,6 +83,7 @@ export default async function TheLabPage() {
               techStack={project.techStack}
               metrics={parseMetrics(project.impactMetric, project.scaleMetric)}
               caseStudyHref={`/lab/${project.slug}`}
+              thumbnailUrl={project.thumbnailUrl}
               featured={project.featured}
             />
           ))}

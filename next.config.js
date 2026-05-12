@@ -14,6 +14,12 @@ const config = {
         hostname: "*.public.blob.vercel-storage.com",
         port: "",
       },
+      // Temporary placeholder until real Vercel Blob thumbnails are uploaded
+      {
+        protocol: "https",
+        hostname: "placeholder.com",
+        port: "",
+      },
     ],
   },
 };

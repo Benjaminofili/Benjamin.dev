@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { type Metadata } from "next";
 import { db } from "~/server/db";
 import { api } from "~/trpc/server";
@@ -144,6 +145,20 @@ export default async function CaseStudyPage({
             The Lab
           </Link>
         </nav>
+
+        {/* ── Hero Image ──────────────────────────────────────────────── */}
+        <div className="relative z-10 mx-auto mt-10 max-w-7xl px-6 md:px-14 lg:px-20">
+          <div className="cs-rise relative w-full h-[400px] overflow-hidden rounded-xl bg-neutral-900 border border-neutral-800">
+            <Image
+              src={project.coverImageUrl ?? project.thumbnailUrl}
+              alt={`${project.title} cover image`}
+              fill
+              priority={true}
+              className="object-cover"
+              sizes="(max-width: 1280px) 100vw, 1280px"
+            />
+          </div>
+        </div>
 
         {/* ── Header ──────────────────────────────────────────────────── */}
         <header className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 md:px-14 lg:px-20">
