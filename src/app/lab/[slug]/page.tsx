@@ -137,7 +137,7 @@ export default async function CaseStudyPage({
         {/* ── Back navigation ──────────────────────────────────────────── */}
         <nav className="relative z-10 mx-auto max-w-7xl px-6 pt-10 md:px-14 lg:px-20">
           <Link
-            href="/#lab"
+            href="/lab"
             className="cs-font-mono inline-flex items-center gap-2 text-xs text-neutral-600 transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
             aria-label="Back to The Lab"
           >

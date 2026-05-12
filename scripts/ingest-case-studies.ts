@@ -36,7 +36,6 @@ const prisma = new PrismaClient({
 
 const EXISTING_SLUG_REMAP: Record<string, string> = {
   "bistro-bliss-frontend-system": "bistro-bliss",
-  "agentic-ai-chatbot": "ai-support-agent",
 };
 
 // ── Project metadata for new records ─────────────────────────────────────────

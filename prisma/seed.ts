@@ -92,8 +92,8 @@ Established a reusable, theme-aware component language with shadcn/ui and Tailwi
           "TanStack Query",
           "OpenWeatherMap API",
         ],
-        liveUrl: "https://shorely.app",
-        repositoryUrl: "https://github.com/benjamin/shorely",
+        liveUrl: "",
+        repositoryUrl: "https://github.com/Benjaminofili/beach-escape-explorer",
         thumbnailUrl: "/projects/shorely.webp",
         completedDate: new Date("2025-07-04"),
         timeframe: "8 weeks",
@@ -140,8 +140,8 @@ Standardized implementation patterns with shadcn/ui + Tailwind to accelerate fut
           "Lucide Icons",
           "React",
         ],
-        liveUrl: "https://bistrobliss.dev",
-        repositoryUrl: "https://github.com/benjamin/bistro-bliss",
+        liveUrl: "",
+        repositoryUrl: "https://github.com/Benjaminofili/BistroBliss-Website",
         thumbnailUrl: "/projects/bistro-bliss.webp",
         completedDate: new Date("2025-03-22"),
         timeframe: "5 weeks",
@@ -151,53 +151,6 @@ Standardized implementation patterns with shadcn/ui + Tailwind to accelerate fut
           "Maintained consistent behavior across all major mobile and desktop breakpoints",
         featured: false,
         displayOrder: 3,
-      },
-    }),
-    prisma.project.upsert({
-      where: { slug: "agentic-ai-chatbot" },
-      update: {},
-      create: {
-        title: "Agentic AI Chatbot",
-        slug: "agentic-ai-chatbot",
-        tagline:
-          "Integrated an edge-first RAG pipeline using pgvector and Vercel AI SDK to create a context-aware assistant.",
-        fullDescription:
-          "Designed and shipped an interactive AI assistant embedded directly within the portfolio. Utilizing the Vercel AI SDK and Supabase pgvector, the chatbot retrieves live context from the database and uses the Gemini model to respond naturally to inquiries regarding projects and architectural decisions.",
-        caseStudyContent: `## Rule of Five Breakdown
-1) **Vector Search Integration**  
-Configured a Supabase pgvector database with cosine distance matching to quickly fetch semantically relevant chunks of the developer's experience.
-
-2) **Streaming UI Responses**  
-Utilized the Vercel AI SDK to stream model responses instantly, eliminating perceived latency and enhancing user engagement.
-
-3) **Glassmorphism Aesthetic**  
-Crafted a dark-mode native, minimally intrusive floating UI window that aligns perfectly with the 'Quiet Minimalism' design tokens.
-
-4) **Context-Aware Prompts**  
-Implemented an automated suggestion engine that pre-populates prompts to guide users into meaningful interactions on empty states.
-
-5) **Strict Type Boundaries**  
-Maintained full TypeScript safety between the Next.js API routes and the client components, ensuring predictable execution and easy refactoring.`,
-        role: ProjectRole.SOLO_DEVELOPER,
-        techStack: [
-          "Next.js App Router",
-          "Vercel AI SDK",
-          "Gemini 2.5 Flash",
-          "Supabase pgvector",
-          "Tailwind CSS",
-          "TypeScript",
-        ],
-        liveUrl: "",
-        repositoryUrl: "https://github.com/benjamin/portfolio",
-        thumbnailUrl: "/projects/agentic-ai.webp",
-        completedDate: new Date(),
-        timeframe: "2 weeks",
-        impactMetric:
-          "Provided instant context on engineering decisions directly within the portfolio",
-        scaleMetric:
-          "Seamlessly integrated streaming responses over a standard edge network",
-        featured: true,
-        displayOrder: 4,
       },
     }),
   ]);
