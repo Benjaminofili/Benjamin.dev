@@ -5,7 +5,6 @@ import { api, HydrateClient } from "~/trpc/server";
 import { HeroSection } from "~/components/blocks/HeroSection";
 import { ProjectCard } from "~/components/blocks/ProjectCard";
 import TheWorkshop from "~/components/TheWorkshop";
-
 import TheLens from "~/components/blocks/TheLens";
 
 // Helper function to extract small metric labels from seeded sentences

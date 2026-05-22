@@ -103,10 +103,10 @@ function extractLatestUserText(messages: UIMessage[]): string {
     const message = messages[i];
     if (message?.role !== "user") continue;
 
-    const parts = Array.isArray(message.parts) ? message.parts : [];
+    const parts = message.parts ?? [];
     const text = parts
       .filter((part): part is { type: "text"; text: string } => {
-        return part?.type === "text" && typeof (part as { text?: unknown })?.text === "string";
+        return part?.type === "text" && typeof part?.text === "string";
       })
       .map((part) => part.text)
       .join("\n")
