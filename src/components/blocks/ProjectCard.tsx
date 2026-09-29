@@ -6,77 +6,82 @@
  *
  * GEO:    <article> landmark, declarative <h3>, short metric labels
  * Theme:  Quiet Minimalism · Dark-mode native (no CSS variables)
- * Method: Rule of Five — ordinal → title → tagline → metrics → stack + CTA
+ * Method: ordinal → title → tagline → key contribution → stack + CTA
  */
 
 import Link from "next/link";
 import Image from "next/image";
+import { ProjectCover } from "~/components/blocks/ProjectCover";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
-export type ImpactMetric = {
-  value: string;
-  label: string;
-};
-
 export type ProjectCardProps = {
+  slug: string;
   index?: number;
   title: string;
   tagline: string;
   role: string | null;
   timeframe: string | null;
   techStack?: string[];
-  metrics?: ImpactMetric[];
+  highlight?: string | null;
   caseStudyHref: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string | null;
   featured?: boolean;
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  SOLO_DEVELOPER: "Solo Developer",
+  LEAD_ENGINEER: "Lead Engineer",
+  CONTRIBUTOR: "Contributor",
+  INTEGRATION_DEVELOPER: "Integration Developer",
+  LEAD_MOBILE_DEVELOPER: "Lead Mobile Developer",
 };
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
 export function ProjectCard({
+  slug,
   index = 1,
   title,
   tagline,
   role,
   timeframe,
   techStack = [],
-  metrics = [],
+  highlight = null,
   caseStudyHref,
   thumbnailUrl,
   featured = false,
 }: ProjectCardProps) {
   const ordinal = String(index).padStart(2, "0");
-  const roleLabel =
-    role === "SOLO_DEVELOPER"
-      ? "Solo Developer"
-      : role === "LEAD_ENGINEER"
-        ? "Lead Engineer"
-        : role ?? "Engineer";
+  const roleLabel = ROLE_LABELS[role ?? ""] ?? null;
 
   return (
     <article
+      id={slug}
       aria-label={`Project: ${title}`}
-      className="group flex flex-col bg-neutral-950 transition-colors duration-300 hover:bg-neutral-900"
+      className="group flex scroll-mt-8 flex-col bg-neutral-950 transition-colors duration-300 hover:bg-neutral-900"
       style={{ borderLeft: "2px solid transparent" }}
       onMouseEnter={(e) =>
         ((e.currentTarget as HTMLElement).style.borderLeftColor =
           "rgba(52,211,153,0.5)")
       }
       onMouseLeave={(e) =>
-        ((e.currentTarget as HTMLElement).style.borderLeftColor =
-          "transparent")
+        ((e.currentTarget as HTMLElement).style.borderLeftColor = "transparent")
       }
     >
-      {/* ── THUMBNAIL IMAGE ─────────────────────────────────────────── */}
-      <div className="relative w-full aspect-video overflow-hidden rounded-t-xl bg-neutral-900">
-        <Image
-          src={thumbnailUrl}
-          alt={`${title} thumbnail`}
-          fill
-          className="object-cover transition-transform duration-700 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
+      {/* ── THUMBNAIL ───────────────────────────────────────────────── */}
+      <div className="relative aspect-video w-full overflow-hidden rounded-t-xl bg-neutral-900">
+        {thumbnailUrl ? (
+          <Image
+            src={thumbnailUrl}
+            alt={`${title} screenshot`}
+            fill
+            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        ) : (
+          <ProjectCover slug={slug} title={title} techStack={techStack} />
+        )}
       </div>
 
       {/* ── TOP ROW: ordinal + metadata ─────────────────────────────── */}
@@ -89,48 +94,54 @@ export function ProjectCard({
         </span>
 
         <div className="flex items-center gap-6">
-          {/* Role */}
-          <div className="flex flex-col items-end gap-0.5">
-            <span
-              className="text-neutral-600 uppercase"
-              style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "9px",
-                letterSpacing: "0.1em",
-              }}
-            >
-              Role
-            </span>
-            <span
-              className="text-xs text-neutral-300"
-              style={{ fontFamily: "'DM Mono', monospace" }}
-            >
-              {roleLabel}
-            </span>
-          </div>
+          {roleLabel && (
+            <div className="flex flex-col items-end gap-0.5">
+              <span
+                className="text-neutral-600 uppercase"
+                style={{
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: "9px",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Role
+              </span>
+              <span
+                className="text-xs text-neutral-300"
+                style={{ fontFamily: "'DM Mono', monospace" }}
+              >
+                {roleLabel}
+              </span>
+            </div>
+          )}
 
-          {/* Divider */}
-          <div className="h-6 w-px bg-neutral-800" aria-hidden="true" />
+          {timeframe && (
+            <>
+              {roleLabel && (
+                <div className="h-6 w-px bg-neutral-800" aria-hidden="true" />
+              )}
 
-          {/* Timeframe */}
-          <div className="flex flex-col items-end gap-0.5">
-            <span
-              className="text-neutral-600 uppercase"
-              style={{
-                fontFamily: "'DM Mono', monospace",
-                fontSize: "9px",
-                letterSpacing: "0.1em",
-              }}
-            >
-              Timeframe
-            </span>
-            <span
-              className="text-xs text-neutral-300"
-              style={{ fontFamily: "'DM Mono', monospace" }}
-            >
-              {timeframe ?? "2025"}
-            </span>
-          </div>
+              {/* Timeframe */}
+              <div className="flex flex-col items-end gap-0.5">
+                <span
+                  className="text-neutral-600 uppercase"
+                  style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: "9px",
+                    letterSpacing: "0.1em",
+                  }}
+                >
+                  Timeframe
+                </span>
+                <span
+                  className="text-xs text-neutral-300"
+                  style={{ fontFamily: "'DM Mono', monospace" }}
+                >
+                  {timeframe}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -160,60 +171,39 @@ export function ProjectCard({
         </div>
 
         <p
-          className="mt-3 text-sm font-light leading-relaxed text-neutral-500"
+          className="mt-3 text-sm leading-relaxed font-light text-neutral-500"
           style={{ fontFamily: "'DM Mono', monospace" }}
         >
           {tagline}
         </p>
       </div>
 
-      {/* ── IMPACT METRICS ──────────────────────────────────────────── */}
+      {/* ── CONTRIBUTION ────────────────────────────────────────────── */}
       <div className="flex-1 px-7 pt-7">
-        <div className="border-t border-neutral-800 pt-6">
-          <p
-            className="mb-5 uppercase text-neutral-600"
-            style={{
-              fontFamily: "'DM Mono', monospace",
-              fontSize: "9px",
-              letterSpacing: "0.12em",
-            }}
-          >
-            Impact
-          </p>
-
-          <dl className="grid grid-cols-2 gap-5 sm:grid-cols-4">
-            {metrics.map((metric, i) => (
-              <div
-                key={i}
-                className="flex flex-col gap-1 border-l border-neutral-800 pl-3"
-              >
-                <dt
-                  className="uppercase text-neutral-600"
-                  style={{
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: "9px",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {metric.label}
-                </dt>
-                <dd
-                  className="text-2xl text-emerald-400"
-                  style={{
-                    fontFamily: "'Instrument Serif', Georgia, serif",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {metric.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+        {highlight && (
+          <div className="border-t border-neutral-800 pt-6">
+            <p
+              className="mb-3 text-neutral-600 uppercase"
+              style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: "9px",
+                letterSpacing: "0.12em",
+              }}
+            >
+              Key contribution
+            </p>
+            <p
+              className="border-l border-neutral-800 pl-3 text-xs leading-relaxed font-light text-neutral-400"
+              style={{ fontFamily: "'DM Mono', monospace" }}
+            >
+              {highlight}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── TECH STACK + CTA ──────────────────────────────────────────── */}
-      <div className="px-7 pb-7 pt-7">
+      <div className="px-7 pt-7 pb-7">
         <div className="flex flex-col gap-5 border-t border-neutral-800 pt-6 sm:flex-row sm:items-center sm:justify-between">
           {/* Tech badges */}
           <div className="flex flex-wrap gap-2" aria-label="Technologies used">

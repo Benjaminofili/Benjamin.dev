@@ -21,6 +21,8 @@ enum ProjectRole {
   SOLO_DEVELOPER
   LEAD_ENGINEER
   CONTRIBUTOR
+  INTEGRATION_DEVELOPER
+  LEAD_MOBILE_DEVELOPER
 }
 
 enum ArticleCategory {
@@ -44,13 +46,13 @@ model Project {
   caseStudyContent  String? @db.Text
   
   // Metadata
-  role              ProjectRole
+  role              ProjectRole?
   techStack         String[] // PostgreSQL array type
   
   // URLs
   liveUrl           String? @db.VarChar(500)
   repositoryUrl     String? @db.VarChar(500)
-  thumbnailUrl      String  @db.VarChar(500)
+  thumbnailUrl      String? @db.VarChar(500)
   coverImageUrl     String? @db.VarChar(500)
   
   // Dates & Metrics

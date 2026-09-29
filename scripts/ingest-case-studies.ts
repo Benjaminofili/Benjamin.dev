@@ -1,20 +1,25 @@
 /**
  * scripts/ingest-case-studies.ts
  *
- * Phase 1a: Updates caseStudyContent for existing projects that match GEO entries.
- * Phase 1b: Upserts (creates or updates) all 10 GEO case study projects.
- * Phase 2:  Strips HTML, chunks text, generates Gemini 768-dim embeddings,
- *           and inserts into document_chunks via $executeRaw.
+ * Syncs portfolio content to the database and rebuilds the RAG index.
  *
- * Run:  npx tsx scripts/ingest-case-studies.ts
+ *  1. Backs up, then removes obsolete/fabricated projects and articles.
+ *  2. Upserts every project in PROJECT_SEEDS (all display fields are updated).
+ *  3. Clears document_chunks and re-embeds identity + case study content
+ *     with Gemini 768-dim embeddings.
+ *
+ * Run:  npx tsx scripts/ingest-case-studies.ts [--dry-run] [--skip-embeddings]
  */
 
 import "dotenv/config";
-import { PrismaClient } from "@prisma/client";
+import fs from "node:fs";
+import path from "node:path";
+import { PrismaClient, type ProjectRole } from "@prisma/client";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { getEncoding } from "js-tiktoken";
 import { GEO_CASE_STUDIES } from "./geo-case-study-data";
+import { IDENTITY_BLOCKS } from "../src/lib/profile";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -22,167 +27,291 @@ const GEMINI_MODEL = "models/gemini-embedding-001";
 const CHUNK_SIZE_TOKENS = 512;
 const CHUNK_OVERLAP_TOKENS = 64;
 const EMBEDDING_DIMENSIONS = 768;
-const PLACEHOLDER_THUMBNAIL = "https://placeholder.com/thumbnail";
 
-// ── Prisma ────────────────────────────────────────────────────────────────────
+const DRY_RUN = process.argv.includes("--dry-run");
+const SKIP_EMBEDDINGS = process.argv.includes("--skip-embeddings");
 
 const prisma = new PrismaClient({
   datasourceUrl: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
 });
 
-// ── Existing-slug → GEO-slug mapping ─────────────────────────────────────────
-// For projects already in the DB whose slugs differ from the GEO data keys.
-// We update their caseStudyContent without changing their slug.
+// ── Obsolete content ─────────────────────────────────────────────────────────
+// Seed entries with unsupported metrics or placeholder repository links, the
+// duplicate Bistro Bliss entry, and the previous translator slug.
 
-const EXISTING_SLUG_REMAP: Record<string, string> = {
-  "bistro-bliss-frontend-system": "bistro-bliss",
-};
+const OBSOLETE_PROJECT_SLUGS = [
+  "benjamin-dev-portfolio",
+  "shorely-beach-escape-platform",
+  "bistro-bliss-frontend-system",
+  "antonio-translator",
+];
 
-// ── Project metadata for new records ─────────────────────────────────────────
-// Required by schema: title, slug, tagline, fullDescription, role, techStack,
-// thumbnailUrl, completedDate, timeframe, displayOrder
+const OBSOLETE_ARTICLE_SLUGS = [
+  "why-i-replaced-rest-with-trpc",
+  "debugging-silent-race-condition-rag-pipeline",
+  "hidden-cost-of-hydration-critique",
+];
+
+// ── Project metadata ─────────────────────────────────────────────────────────
+// `highlight` is stored in the impactMetric column and shown as "Key
+// contribution". It must stay qualitative: no unmeasured figures.
 
 type ProjectSeed = {
   title: string;
   tagline: string;
   fullDescription: string;
+  // null when the contribution split is not established; the UI omits the field
+  // rather than asserting a role that cannot be supported.
+  role: ProjectRole | null;
   techStack: string[];
-  repositoryUrl?: string;
-  liveUrl?: string | null;
-  thumbnailUrl?: string;
-  coverImageUrl?: string | null;
-  timeframe: string;
+  repositoryUrl: string | null;
+  // null until a real screenshot of the running project exists. The UI renders
+  // a typographic cover instead of a stand-in image.
+  thumbnailUrl: string | null;
+  coverImageUrl: string | null;
   completedDate: Date;
+  highlight: string;
+  // Team/engagement context, e.g. a hackathon. Stored in scaleMetric, which —
+  // like impactMetric — now carries prose rather than a metric.
+  context?: string;
+  featured: boolean;
   displayOrder: number;
-  impactMetric?: string;
-  scaleMetric?: string | null;
 };
 
 const PROJECT_SEEDS: Record<string, ProjectSeed> = {
-  "verd": {
-    title: "VERD",
-    tagline: "An offline-first Flutter app delivering instant crop-health diagnostics via a hybrid cloud-to-edge AI routing system.",
-    fullDescription: "VERD is an AI-powered crop health diagnostic engine engineered for offline-first agricultural environments. It uses a hybrid routing system to switch seamlessly between cloud Gemini API inference and an on-device TensorFlow Lite model, ensuring sub-500ms diagnostics even in zero-connectivity rural fields.",
-    techStack: ["Flutter", "Dart", "Riverpod", "Firebase", "TensorFlow Lite", "Gemini API", "Hive", "GoRouter"],
-    repositoryUrl: "https://github.com/Benjaminofili/Verd",
-    thumbnailUrl: "/verd-Thumbnail.avif",
-    timeframe: "6 weeks",
-    completedDate: new Date("2024-08-01"),
-    displayOrder: 5,
-    impactMetric: "Sub-500ms AI inference with 100% data retention in zero-connectivity environments",
-  },
-  "fusion-fiesta": {
-    title: "Fusion Fiesta",
-    tagline: "A cross-platform college event ecosystem with distinct role-based portals, JWT-guarded routing, and QR-based attendance tracking.",
-    fullDescription: "Fusion Fiesta is an enterprise-grade event management platform built with Feature-First Clean Architecture. It manages three isolated user personas — Admin, Organizer, and Student — with strict route guards, scoped dependency injection, and an offline-capable QR ticketing system.",
-    techStack: ["Flutter", "Dart", "GoRouter", "GetIt", "REST API", "Mockito"],
-    repositoryUrl: "https://github.com/Benjaminofili/Fusion_fiesta_v2",
-    thumbnailUrl: "/Fusion_fiesta-Thumbnail.avif",
-    timeframe: "5 weeks",
-    completedDate: new Date("2024-06-01"),
-    displayOrder: 6,
-    impactMetric: "30+ screens across 3 isolated user roles with zero state leakage",
-  },
-  "tasteflow": {
-    title: "Tasteflow",
-    tagline: "A multi-tenant food delivery ecosystem with strict RBAC and dedicated secure portals for customers, owners, and admins.",
-    fullDescription: "Tasteflow is a multi-tenant restaurant and delivery platform architected with Flask Blueprints for strict domain isolation. It enforces role-based access control across three user personas, with SQLAlchemy-backed relational data modeling and a comprehensive Pytest suite covering security boundaries and E2E journeys.",
-    techStack: ["Python", "Flask", "SQLAlchemy", "Alembic", "Pytest", "Werkzeug", "Jinja2", "Vanilla JavaScript"],
-    repositoryUrl: "https://github.com/Benjaminofili/Tasteflow",
-    thumbnailUrl: "/Tasteflow_Thumbnail.avif",
-    timeframe: "5 weeks",
-    completedDate: new Date("2024-04-01"),
-    displayOrder: 7,
-    impactMetric: "Zero horizontal privilege escalation across 3 roles and 20+ routes",
-  },
-  "baby-shophub": {
-    title: "Baby Shophub",
-    tagline: "A full-stack e-commerce app with real-time order tracking, deep-linked product routing, and isolated dual-role portals.",
-    fullDescription: "Baby Shophub is a cross-platform e-commerce ecosystem powered by a Supabase BaaS backend. It features dual isolated portals for customers and administrators, a service abstraction layer to decouple all database queries from the UI, and a deep-linking service enabling direct-to-product navigation from external marketing campaigns.",
-    techStack: ["Flutter", "Dart", "Supabase", "PostgreSQL", "Deep Linking"],
-    repositoryUrl: "https://github.com/Benjaminofili/Baby_Shophub",
-    timeframe: "4 weeks",
-    completedDate: new Date("2024-02-01"),
-    displayOrder: 8,
-    impactMetric: "20+ screens with isolated customer and admin lifecycles via Supabase BaaS",
+  // ── Featured ────────────────────────────────────────────────────────────
+  mediconnect: {
+    title: "MediConnect",
+    tagline:
+      "A Django REST API for remote consultations: role-based accounts, appointment booking, Whereby video rooms and medical document storage.",
+    fullDescription:
+      "MediConnect is a Django REST API where patients book appointments with doctors, hold video consultations through the Whereby API, and receive prescriptions and medical records. It uses PostgreSQL, JWT authentication with separate patient, doctor and administrator roles, Supabase object storage for documents, and a Pytest suite with mocked and real-API test modes.",
+    role: "SOLO_DEVELOPER",
+    techStack: [
+      "Python",
+      "Django",
+      "Django REST Framework",
+      "PostgreSQL",
+      "JWT",
+      "Whereby API",
+      "Supabase Storage",
+      "Pytest",
+    ],
+    repositoryUrl: "https://github.com/Benjaminofili/MediConnect-",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-03-01"),
+    highlight:
+      "Designed and built the backend: role-based accounts, appointment lifecycle, Whereby video rooms and document storage, with a Pytest suite that has mocked and real-API modes.",
+    featured: true,
+    displayOrder: 1,
   },
   "ai-support-agent": {
     title: "AI Support Agent",
-    tagline: "A robust multi-channel AI support platform with async background processing and a pgvector RAG knowledge base.",
-    fullDescription: "AI Support Agent is an enterprise-grade conversational AI platform built with Django, Celery, and Redis. It decouples slow LLM inference from the main thread via an async task queue, implements a full RAG pipeline with pgvector for cosine similarity retrieval, and normalises multi-channel inputs (email, webchat) into a unified ticket model.",
-    techStack: ["Python", "Django", "PostgreSQL", "pgvector", "Celery", "Redis", "Hugging Face", "Docker", "Playwright"],
+    tagline:
+      "A multi-tenant support platform that answers customer questions from a company's own documents using RAG, across web chat, WhatsApp and email.",
+    fullDescription:
+      "AI Support Agent is a multi-tenant B2B support platform built with Django and Django Ninja. Documents are embedded into PostgreSQL with pgvector and retrieved to ground answers generated through Groq, with OpenAI as a fallback. Celery and Redis run background work, Twilio provides WhatsApp, and email is handled through SMTP and Resend. Embeddings are computed locally with a Hugging Face model.",
+    role: "SOLO_DEVELOPER",
+    techStack: [
+      "Python",
+      "Django",
+      "Django Ninja",
+      "PostgreSQL",
+      "pgvector",
+      "Celery",
+      "Redis",
+      "Hugging Face",
+      "Twilio",
+      "Docker",
+    ],
     repositoryUrl: "https://github.com/Benjaminofili/ai_support_agent",
-    timeframe: "6 weeks",
-    completedDate: new Date("2024-10-01"),
-    displayOrder: 9,
-    impactMetric: "100% webhook ingestion success with zero UI blocking under concurrent LLM load",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-10-01"),
+    highlight:
+      "Built the full RAG pipeline and the integrations around it: document ingestion, vector retrieval, background processing, and web chat, WhatsApp and email channels.",
+    featured: true,
+    displayOrder: 2,
   },
-  "devdocs-ai": {
-    title: "DevDocs AI",
-    tagline: "A multi-tenant AI SaaS that ingests GitHub repositories and orchestrates multiple LLMs to generate production-ready documentation.",
-    fullDescription: "DevDocs AI is an advanced multi-tenant SaaS platform that analyses the AST of GitHub repositories and routes generation tasks across Anthropic, Gemini, Groq, OpenAI, and local Ollama models. It integrates a full Stripe billing pipeline, Upstash Redis rate-limiting, and automatic graceful model degradation to ensure reliable documentation output.",
-    techStack: ["Next.js", "TypeScript", "Supabase", "Redis (Upstash)", "Stripe", "Anthropic", "Gemini", "Groq", "Ollama"],
-    timeframe: "8 weeks",
-    completedDate: new Date("2025-01-01"),
-    displayOrder: 10,
-    impactMetric: "Hot-swappable AI across 5 LLM providers with Redis-protected endpoints",
+  verd: {
+    title: "Verd",
+    tagline:
+      "An offline-first Flutter app that detects plant diseases from photos, using Gemini online and on-device TensorFlow Lite offline.",
+    fullDescription:
+      "Verd helps farmers and gardeners identify crop health issues from a photo. It was a team project built for the AgriScan AI Hackathon, where it reached the finals, with Benjamin as Lead Mobile Developer: he led the Flutter application, built the frontend, handled the app's backend and service integration, and integrated the pretrained machine-learning model. It uses Riverpod and GoRouter, Firebase for authentication and sync, Hive for local storage, the Gemini API when online and an on-device TensorFlow Lite model with Grad-CAM when offline. The underlying model was not trained by him.",
+    role: "LEAD_MOBILE_DEVELOPER",
+    techStack: [
+      "Flutter",
+      "Dart",
+      "Riverpod",
+      "TensorFlow Lite",
+      "Grad-CAM",
+      "Firebase",
+      "Hive",
+      "Gemini API",
+    ],
+    repositoryUrl: "https://github.com/Benjaminofili/Verd",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-09-01"),
+    highlight:
+      "Led the Flutter app as Lead Mobile Developer: frontend, service integration, and integration of the on-device machine-learning model with Grad-CAM explainability.",
+    context: "Team project · AgriScan AI Hackathon finalist",
+    featured: true,
+    displayOrder: 3,
   },
-  "mediconnect": {
-    title: "MediConnect",
-    tagline: "A comprehensive telehealth and practice management system with video consultations, dynamic scheduling, and encrypted EMR storage.",
-    fullDescription: "MediConnect is a secure domain-driven Django monolith for telehealth practice management. It integrates the Whereby API for dynamic WebRTC video room provisioning, AWS S3 custom storage backends for encrypted EMR documents, and an atomic slot-locking scheduling engine that prevents double-bookings in high-concurrency environments.",
-    techStack: ["Python", "Django", "PostgreSQL", "AWS S3", "Whereby API", "Pytest"],
-    repositoryUrl: "https://github.com/Benjaminofili/MediConnect-",
-    timeframe: "7 weeks",
-    completedDate: new Date("2025-03-01"),
-    displayOrder: 11,
-    impactMetric: "100% critical journey coverage via Pytest integration suite with zero production regressions",
+  "offline-voice-translator": {
+    title: "Offline AI Voice Translator",
+    tagline:
+      "A Flutter app that transcribes, translates and speaks using pretrained on-device models: Sherpa-ONNX, CTranslate2 with OPUS-MT, and Piper.",
+    fullDescription:
+      "The Offline AI Voice Translator chains speech recognition, machine translation and speech synthesis inside a Flutter app using pretrained models. My contribution was integration engineering: researching model options, integrating Sherpa-ONNX for speech-to-text, CTranslate2 with OPUS-MT for translation and Piper for text-to-speech, orchestrating the pipeline, working around Windows, mobile and ONNX constraints, and building the initial UI. The underlying models were not trained by me.",
+    role: "INTEGRATION_DEVELOPER",
+    techStack: [
+      "Flutter",
+      "Dart",
+      "Sherpa-ONNX",
+      "CTranslate2",
+      "OPUS-MT",
+      "Piper TTS",
+      "Hive",
+    ],
+    repositoryUrl: null,
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-12-01"),
+    highlight:
+      "Integration engineering: selected pretrained models and orchestrated speech to transcription to translation to speech, including platform and ONNX workarounds.",
+    featured: true,
+    displayOrder: 4,
   },
-  "aspire-edge": {
-    title: "AspireEdge",
-    tagline: "A decoupled enterprise ecosystem with a containerized Spring Boot backend and a cross-platform Flutter client.",
-    fullDescription: "AspireEdge is a decoupled client-server enterprise platform comprising a Docker-containerized Spring Boot REST API and a cross-platform Flutter client. It uses Spring Boot YAML profiles for runtime database switching between a local Dockerized PostgreSQL instance and a Supabase production cluster, achieving 100% environment parity without code changes.",
-    techStack: ["Java", "Spring Boot", "PostgreSQL", "Docker", "Flutter", "Dart", "Supabase"],
-    repositoryUrl: "https://github.com/Benjaminofili/AspireEdge",
-    timeframe: "4 weeks",
-    completedDate: new Date("2024-11-01"),
-    displayOrder: 12,
-    impactMetric: "Backend onboarding under 60 seconds with native compilation across 5 operating systems",
+
+  // ── Earlier work and in-progress ────────────────────────────────────────
+  "fusion-fiesta": {
+    title: "Fusion Fiesta",
+    tagline:
+      "A Flutter college event management app with separate admin, organizer and student portals and QR-based attendance.",
+    fullDescription:
+      "Fusion Fiesta is a cross-platform event management app built with Flutter, GoRouter and GetIt. It separates administrator, organizer and student experiences and includes QR-based attendance tracking. An earlier learning project.",
+    role: "SOLO_DEVELOPER",
+    techStack: ["Flutter", "Dart", "GoRouter", "GetIt", "REST API"],
+    repositoryUrl: "https://github.com/Benjaminofili/Fusion_fiesta_v2",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-06-01"),
+    highlight:
+      "Role-based portals with route guards, and QR-based event check-in.",
+    featured: false,
+    displayOrder: 5,
+  },
+  tasteflow: {
+    title: "Tasteflow",
+    tagline:
+      "A Flask food ordering and delivery platform with separate customer, owner and admin portals.",
+    fullDescription:
+      "Tasteflow is a full-stack Flask application using Blueprints, SQLAlchemy, Alembic and Jinja2, with role-based access for customers, restaurant owners and administrators and a Pytest suite. An earlier learning project.",
+    role: "SOLO_DEVELOPER",
+    techStack: ["Python", "Flask", "SQLAlchemy", "Alembic", "Pytest", "Jinja2"],
+    repositoryUrl: "https://github.com/Benjaminofili/Tasteflow",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-04-01"),
+    highlight:
+      "Three-role access control with data scoped to each restaurant owner, covered by Pytest.",
+    featured: false,
+    displayOrder: 6,
+  },
+  "baby-shophub": {
+    title: "Baby Shophub",
+    tagline:
+      "A Flutter e-commerce app for baby products with Supabase, Google sign-in and separate customer and admin flows.",
+    fullDescription:
+      "Baby Shophub is a Flutter mobile shop backed by Supabase (PostgreSQL and auth), with Google sign-in, a service layer between screens and data, and deep links to product screens. An earlier learning project.",
+    role: "SOLO_DEVELOPER",
+    techStack: ["Flutter", "Dart", "Supabase", "PostgreSQL"],
+    repositoryUrl: "https://github.com/Benjaminofili/Baby_Shophub",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-06-01"),
+    highlight:
+      "Customer and admin flows chosen at sign-in, with a service layer keeping database queries out of the UI.",
+    featured: false,
+    displayOrder: 7,
   },
   "bistro-bliss": {
     title: "Bistro Bliss",
-    tagline: "A fully responsive restaurant platform with accessible components, type-safe forms, and interactive reservation booking flows.",
-    fullDescription: "Bistro Bliss is a high-performance Next.js 14 restaurant web application built on Radix UI primitives via Shadcn UI. It delivers 100% ARIA-compliant interactive components, type-safe reservation forms powered by Zod and React Hook Form, and optimised asset delivery via next/image — maintaining a flawless layout from 320px mobile to 4K desktop.",
-    techStack: ["Next.js", "TypeScript", "Tailwind CSS", "Shadcn UI", "Radix UI", "React Hook Form", "Zod"],
+    tagline:
+      "A responsive restaurant website built with Next.js, TypeScript and Tailwind CSS, with a validated reservation form.",
+    fullDescription:
+      "Bistro Bliss is a restaurant website with menu browsing and a reservation form, built with Next.js, TypeScript, Tailwind CSS, shadcn/ui, React Hook Form and Zod. An earlier front-end learning project.",
+    role: "SOLO_DEVELOPER",
+    techStack: [
+      "Next.js",
+      "TypeScript",
+      "Tailwind CSS",
+      "shadcn/ui",
+      "React Hook Form",
+      "Zod",
+    ],
     repositoryUrl: "https://github.com/Benjaminofili/BistroBliss-Website",
-    timeframe: "3 weeks",
-    completedDate: new Date("2024-01-01"),
-    displayOrder: 13,
-    impactMetric: "100% ARIA-compliant components with zero DOM layout shifts across all viewports",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2025-12-01"),
+    highlight:
+      "Responsive layout and a reservation form with typed validation on accessible component primitives.",
+    featured: false,
+    displayOrder: 8,
   },
-  "antonio-translator": {
-    title: "Antonio Translator",
-    tagline: "A cross-platform audio translation app orchestrating STT, Machine Translation, and TTS via strict service-oriented architecture.",
-    fullDescription: "Antonio Translator is a real-time voice translation engine built on a strict Service-Oriented Architecture. It orchestrates a 4-stage async pipeline (Record → Transcribe → Translate → Synthesise) entirely within headless singleton Dart services, making the UI a stateless consumer and preventing memory leaks even during aggressive UI iteration cycles.",
-    techStack: ["Flutter", "Dart", "STT API", "TTS API", "REST API", "Local Storage"],
-    repositoryUrl: "https://github.com/Benjaminofili/Antionio-translator",
-    timeframe: "3 weeks",
-    completedDate: new Date("2023-11-01"),
-    displayOrder: 14,
-    impactMetric: "Sub-second 4-API pipeline orchestration with 100% business logic isolated from the UI layer",
+  "devdocs-ai": {
+    title: "DevDocs AI",
+    tagline:
+      "An experimental prototype that drafts documentation for a GitHub repository using language models. Work in progress.",
+    fullDescription:
+      "DevDocs AI is an experimental Next.js and TypeScript prototype that reads a GitHub repository and uses language models to draft documentation. It includes a provider-agnostic AI layer and rate limiting. Output quality is not yet where it should be, so it is presented as earlier work.",
+    role: "SOLO_DEVELOPER",
+    techStack: ["Next.js", "TypeScript", "Supabase", "Redis"],
+    repositoryUrl: "https://github.com/Benjaminofili/devdocs-ai",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2026-02-01"),
+    highlight:
+      "A provider-agnostic AI layer and rate limiting on the AI endpoints. Still a prototype.",
+    featured: false,
+    displayOrder: 9,
+  },
+  "aspire-edge": {
+    title: "AspireEdge",
+    tagline:
+      "A career guidance platform for students and professionals. In development.",
+    fullDescription:
+      "AspireEdge is a career guidance platform in development, planned as a Spring Boot backend with PostgreSQL and a cross-platform Flutter client. It is unfinished and is not presented as a completed system.",
+    role: "SOLO_DEVELOPER",
+    techStack: ["Java", "Spring Boot", "PostgreSQL", "Docker", "Flutter"],
+    repositoryUrl: "https://github.com/Benjaminofili/AspireEdge",
+    thumbnailUrl: null,
+    coverImageUrl: null,
+    completedDate: new Date("2026-01-01"),
+    highlight: "Unfinished. Included to show current direction and learning.",
+    featured: false,
+    displayOrder: 10,
   },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim();
-}
-
-type Metadata = { type: "project"; id: string; title: string; slug: string };
+type Metadata = {
+  type: "project" | "identity";
+  id: string;
+  title: string;
+  slug?: string;
+};
 type ChunkPayload = { content: string; metadata: Metadata };
 
-async function chunkText(text: string, metadata: Metadata): Promise<ChunkPayload[]> {
+async function chunkText(
+  text: string,
+  metadata: Metadata,
+): Promise<ChunkPayload[]> {
   const enc = getEncoding("cl100k_base");
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: CHUNK_SIZE_TOKENS,
@@ -198,7 +327,7 @@ async function chunkText(text: string, metadata: Metadata): Promise<ChunkPayload
 
 async function embedText(
   model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]>,
-  text: string
+  text: string,
 ): Promise<number[]> {
   const res = await model.embedContent({
     content: { role: "user", parts: [{ text }] },
@@ -207,182 +336,187 @@ async function embedText(
 
   const values = res.embedding.values;
   if (!Array.isArray(values) || values.length !== EMBEDDING_DIMENSIONS) {
-    throw new Error(`Bad embedding: expected ${EMBEDDING_DIMENSIONS}, got ${values?.length}`);
+    throw new Error(
+      `Bad embedding: expected ${EMBEDDING_DIMENSIONS}, got ${values?.length}`,
+    );
   }
   return values;
+}
+
+async function insertChunk(
+  model: ReturnType<GoogleGenerativeAI["getGenerativeModel"]>,
+  chunk: ChunkPayload,
+) {
+  const embedding = await embedText(model, chunk.content);
+  await prisma.$executeRaw`
+    INSERT INTO document_chunks (id, content, metadata, embedding, "createdAt")
+    VALUES (
+      gen_random_uuid(),
+      ${chunk.content},
+      ${JSON.stringify(chunk.metadata)}::jsonb,
+      ${`[${embedding.join(",")}]`}::vector,
+      NOW()
+    )
+  `;
+}
+
+function validateSeeds() {
+  for (const [slug, seed] of Object.entries(PROJECT_SEEDS)) {
+    if (!GEO_CASE_STUDIES[slug]) throw new Error(`No case study for "${slug}"`);
+    if (seed.title.length > 60) throw new Error(`${slug}: title > 60 chars`);
+    if (seed.tagline.length > 200)
+      throw new Error(`${slug}: tagline > 200 chars`);
+    if (seed.highlight.length > 200)
+      throw new Error(`${slug}: highlight > 200 chars`);
+    if (seed.context && seed.context.length > 200)
+      throw new Error(`${slug}: context > 200 chars`);
+  }
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (!apiKey) throw new Error("Missing env var: GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY");
+  validateSeeds();
+  console.log(`\nSync portfolio content${DRY_RUN ? " (DRY RUN)" : ""}\n`);
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  // ── 1. Back up and remove obsolete content ───────────────────────────────
+  const obsoleteProjects = await prisma.project.findMany({
+    where: { slug: { in: OBSOLETE_PROJECT_SLUGS } },
+  });
+  const obsoleteArticles = await prisma.article.findMany({
+    where: { slug: { in: OBSOLETE_ARTICLE_SLUGS } },
+  });
+  console.log(
+    `Obsolete rows found: ${obsoleteProjects.length} projects, ${obsoleteArticles.length} articles`,
+  );
 
-  console.log("\n🚀 Ingest Case Studies — Starting\n");
+  if (
+    !DRY_RUN &&
+    (obsoleteProjects.length > 0 || obsoleteArticles.length > 0)
+  ) {
+    const dir = path.join(process.cwd(), "scratch", "backups");
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, `removed-content-${Date.now()}.json`);
+    fs.writeFileSync(
+      file,
+      JSON.stringify(
+        { projects: obsoleteProjects, articles: obsoleteArticles },
+        null,
+        2,
+      ),
+    );
+    console.log(`Backup written: ${file}`);
 
-  // ── PHASE 1a: Update existing mismatched projects ─────────────────────────
-
-  console.log("── PHASE 1a: Updating caseStudyContent on existing remapped projects ──");
-  for (const [existingSlug, geoKey] of Object.entries(EXISTING_SLUG_REMAP)) {
-    const geoEntry = GEO_CASE_STUDIES[geoKey];
-    if (!geoEntry) { console.warn(`  ⚠ No GEO entry for key "${geoKey}"`); continue; }
-
-    const updated = await prisma.project.updateMany({
-      where: { slug: existingSlug },
-      data: { caseStudyContent: geoEntry.markdown },
+    await prisma.project.deleteMany({
+      where: { slug: { in: OBSOLETE_PROJECT_SLUGS } },
     });
-
-    if (updated.count > 0) {
-      console.log(`  ✓ Updated "${existingSlug}" with GEO content from "${geoKey}"`);
-    } else {
-      console.warn(`  ⚠ No project found with slug "${existingSlug}" — skipping remap`);
-    }
+    await prisma.article.deleteMany({
+      where: { slug: { in: OBSOLETE_ARTICLE_SLUGS } },
+    });
+    console.log("Obsolete rows removed.");
   }
 
-  // ── PHASE 1b: Upsert all 10 GEO projects ─────────────────────────────────
+  // ── 2. Upsert projects ────────────────────────────────────────────────────
+  console.log("\nUpserting projects:");
+  const projects: {
+    id: string;
+    slug: string;
+    title: string;
+    techStack: string[];
+  }[] = [];
 
-  console.log("\n── PHASE 1b: Upserting all 10 GEO projects ──");
-  const upsertedProjects: { id: string; slug: string; title: string }[] = [];
+  for (const [slug, seed] of Object.entries(PROJECT_SEEDS)) {
+    const geo = GEO_CASE_STUDIES[slug]!;
+    const fields = {
+      title: seed.title,
+      tagline: seed.tagline,
+      fullDescription: seed.fullDescription,
+      caseStudyContent: geo.markdown,
+      role: seed.role,
+      techStack: seed.techStack,
+      repositoryUrl: seed.repositoryUrl,
+      liveUrl: null,
+      thumbnailUrl: seed.thumbnailUrl,
+      coverImageUrl: seed.coverImageUrl,
+      timeframe: "",
+      impactMetric: seed.highlight,
+      scaleMetric: seed.context ?? null,
+      featured: seed.featured,
+      displayOrder: seed.displayOrder,
+    };
 
-  for (const [slug, geoEntry] of Object.entries(GEO_CASE_STUDIES)) {
-    const seed = PROJECT_SEEDS[slug];
-    if (!seed) {
-      console.warn(`  ⚠ No seed metadata for slug "${slug}" — skipping`);
+    if (DRY_RUN) {
+      console.log(
+        `  (dry) ${slug} featured=${seed.featured} order=${seed.displayOrder}`,
+      );
       continue;
     }
 
     const project = await prisma.project.upsert({
       where: { slug },
-      create: {
-        slug,
-        title: seed.title,
-        tagline: seed.tagline,
-        fullDescription: seed.fullDescription,
-        caseStudyContent: geoEntry.markdown,
-        role: "SOLO_DEVELOPER",
-        techStack: seed.techStack,
-        repositoryUrl: seed.repositoryUrl,
-        thumbnailUrl: seed.thumbnailUrl ?? PLACEHOLDER_THUMBNAIL,
-        completedDate: seed.completedDate,
-        timeframe: seed.timeframe,
-        displayOrder: seed.displayOrder,
-        impactMetric: seed.impactMetric,
-        featured: false,
-      },
-      update: {
-        caseStudyContent: geoEntry.markdown,
-        thumbnailUrl: seed.thumbnailUrl ?? undefined,
-      },
-      select: { id: true, slug: true, title: true },
+      create: { slug, completedDate: seed.completedDate, ...fields },
+      update: fields,
+      select: { id: true, slug: true, title: true, techStack: true },
     });
-
-    upsertedProjects.push(project);
-    console.log(`  ✓ Upserted: ${project.title} (${project.slug})`);
+    projects.push(project);
+    console.log(`  ✓ ${project.slug}`);
   }
 
-  console.log(`\n  Total GEO projects upserted: ${upsertedProjects.length}/10`);
-
-  // ── PHASE 2: Delete stale chunks and re-embed ─────────────────────────────
-
-  console.log("\n── PHASE 2: Clearing stale document_chunks for GEO projects ──");
-
-  for (const project of upsertedProjects) {
-    await prisma.$executeRaw`
-      DELETE FROM document_chunks
-      WHERE metadata->>'type' = 'project'
-        AND metadata->>'id'   = ${project.id}
-    `;
+  if (DRY_RUN || SKIP_EMBEDDINGS) {
+    console.log("\nSkipping embeddings.");
+    return;
   }
 
-  // Also clear chunks for remapped existing projects
-  for (const existingSlug of Object.keys(EXISTING_SLUG_REMAP)) {
-    const p = await prisma.project.findUnique({ where: { slug: existingSlug }, select: { id: true } });
-    if (p) {
-      await prisma.$executeRaw`
-        DELETE FROM document_chunks
-        WHERE metadata->>'type' = 'project'
-          AND metadata->>'id'   = ${p.id}
-      `;
-    }
-  }
+  // ── 3. Rebuild the RAG index ──────────────────────────────────────────────
+  const apiKey =
+    process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  if (!apiKey)
+    throw new Error(
+      "Missing env var: GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY",
+    );
+  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+    model: GEMINI_MODEL,
+  });
 
-  console.log("  ✓ Stale chunks cleared.\n");
+  console.log("\nClearing document_chunks and re-embedding");
+  await prisma.$executeRaw`DELETE FROM document_chunks`;
 
-  // ── PHASE 2b: Generate + insert embeddings for GEO projects ───────────────
+  let total = 0;
 
-  console.log("── PHASE 2b: Generating Gemini embeddings ──");
-  let totalInserted = 0;
-
-  for (const project of upsertedProjects) {
-    const geoEntry = GEO_CASE_STUDIES[project.slug];
-    if (!geoEntry) continue;
-
-    const plainText = geoEntry.markdown;
-    const metadata: Metadata = { type: "project", id: project.id, title: project.title, slug: project.slug };
-    const chunks = await chunkText(plainText, metadata);
-
-    console.log(`  Embedding ${chunks.length} chunks → ${project.title}`);
-
-    for (const chunk of chunks) {
-      const embedding = await embedText(model, chunk.content);
-      await prisma.$executeRaw`
-        INSERT INTO document_chunks (id, content, metadata, embedding, "createdAt")
-        VALUES (
-          gen_random_uuid(),
-          ${chunk.content},
-          ${JSON.stringify(chunk.metadata)}::jsonb,
-          ${`[${embedding.join(",")}]`}::vector,
-          NOW()
-        )
-      `;
-      totalInserted++;
-    }
-
-    console.log(`  ✓ Done: ${project.title} (${chunks.length} chunks)`);
-  }
-
-  // ── PHASE 2c: Re-embed remapped existing projects ─────────────────────────
-
-  for (const [existingSlug, geoKey] of Object.entries(EXISTING_SLUG_REMAP)) {
-    const project = await prisma.project.findUnique({
-      where: { slug: existingSlug },
-      select: { id: true, title: true, slug: true },
+  for (const [i, content] of IDENTITY_BLOCKS.entries()) {
+    await insertChunk(model, {
+      content,
+      metadata: { type: "identity", id: `identity-${i + 1}`, title: "About" },
     });
-    if (!project) continue;
-
-    const geoEntry = GEO_CASE_STUDIES[geoKey];
-    if (!geoEntry) continue;
-
-    const plainText = geoEntry.markdown;
-    const metadata: Metadata = { type: "project", id: project.id, title: project.title, slug: project.slug };
-    const chunks = await chunkText(plainText, metadata);
-
-    console.log(`  Embedding ${chunks.length} chunks → ${project.title} (remapped from ${geoKey})`);
-
-    for (const chunk of chunks) {
-      const embedding = await embedText(model, chunk.content);
-      await prisma.$executeRaw`
-        INSERT INTO document_chunks (id, content, metadata, embedding, "createdAt")
-        VALUES (
-          gen_random_uuid(),
-          ${chunk.content},
-          ${JSON.stringify(chunk.metadata)}::jsonb,
-          ${`[${embedding.join(",")}]`}::vector,
-          NOW()
-        )
-      `;
-      totalInserted++;
-    }
-
-    console.log(`  ✓ Done: ${project.title}`);
+    total++;
   }
 
-  console.log(`\n✅ All done! Total document chunks inserted: ${totalInserted}`);
+  for (const project of projects) {
+    const geo = GEO_CASE_STUDIES[project.slug]!;
+    const header = `Project: ${project.title}. Technologies: ${project.techStack.join(", ")}.\n\n`;
+    const chunks = await chunkText(header + geo.markdown, {
+      type: "project",
+      id: project.id,
+      title: project.title,
+      slug: project.slug,
+    });
+    // Repeat the project name on every chunk so retrieval can tell projects apart.
+    for (const chunk of chunks) {
+      const content = chunk.content.startsWith("Project:")
+        ? chunk.content
+        : `Project: ${project.title}.\n\n${chunk.content}`;
+      await insertChunk(model, { ...chunk, content });
+      total++;
+    }
+    console.log(`  ✓ ${project.title} (${chunks.length} chunks)`);
+  }
+
+  console.log(`\nDone. Chunks inserted: ${total}`);
 }
 
 main()
-  .catch((err) => { console.error("Ingestion failed:", err); process.exit(1); })
+  .catch((err) => {
+    console.error("Sync failed:", err);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

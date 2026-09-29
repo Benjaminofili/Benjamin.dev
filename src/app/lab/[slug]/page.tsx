@@ -4,6 +4,15 @@ import Image from "next/image";
 import { type Metadata } from "next";
 import { db } from "~/server/db";
 import { api } from "~/trpc/server";
+import { ProjectCover } from "~/components/blocks/ProjectCover";
+
+const ROLE_LABELS: Record<string, string> = {
+  SOLO_DEVELOPER: "Solo Developer",
+  LEAD_ENGINEER: "Lead Engineer",
+  CONTRIBUTOR: "Contributor",
+  INTEGRATION_DEVELOPER: "Integration Developer",
+  LEAD_MOBILE_DEVELOPER: "Lead Mobile Developer",
+};
 
 /* ─── Static params for pre-rendering ─────────────────────────────────────── */
 
@@ -27,11 +36,11 @@ export async function generateMetadata({
   try {
     const project = await api.project.getBySlug({ slug });
     return {
-      title: `${project.title} — Case Study | Anthology`,
+      title: `${project.title} — Case Study`,
       description: project.tagline,
     };
   } catch {
-    return { title: "Not Found | Anthology" };
+    return { title: "Not Found" };
   }
 }
 
@@ -51,12 +60,22 @@ export default async function CaseStudyPage({
     notFound();
   }
 
-  const roleLabel =
-    project.role === "SOLO_DEVELOPER"
-      ? "Solo Developer"
-      : project.role === "LEAD_ENGINEER"
-        ? "Lead Engineer"
-        : (project.role ?? "Engineer");
+  const coverSrc = project.coverImageUrl ?? project.thumbnailUrl;
+
+  const roleLabel = ROLE_LABELS[project.role ?? ""] ?? null;
+
+  const metadata: { label: string; value: string; href?: string }[] = [
+    ...(roleLabel ? [{ label: "Role", value: roleLabel }] : []),
+    ...(project.timeframe
+      ? [{ label: "Timeframe", value: project.timeframe }]
+      : []),
+    ...(project.liveUrl
+      ? [{ label: "Live", value: project.liveUrl, href: project.liveUrl }]
+      : []),
+    ...(project.repositoryUrl
+      ? [{ label: "Repo", value: "GitHub →", href: project.repositoryUrl }]
+      : []),
+  ];
 
   return (
     <>
@@ -123,7 +142,6 @@ export default async function CaseStudyPage({
       `}</style>
 
       <div className="min-h-screen bg-neutral-950 text-neutral-100">
-
         {/* Background bloom — mirrors hero */}
         <div
           aria-hidden="true"
@@ -137,8 +155,8 @@ export default async function CaseStudyPage({
         {/* ── Back navigation ──────────────────────────────────────────── */}
         <nav className="relative z-10 mx-auto max-w-7xl px-6 pt-10 md:px-14 lg:px-20">
           <Link
-            href="/lab"
-            className="cs-font-mono inline-flex items-center gap-2 text-xs text-neutral-600 transition-colors duration-200 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+            href={`/lab#${project.slug}`}
+            className="cs-font-mono inline-flex items-center gap-2 text-xs text-neutral-600 transition-colors duration-200 hover:text-emerald-400 focus-visible:ring-1 focus-visible:ring-emerald-500 focus-visible:outline-none"
             aria-label="Back to The Lab"
           >
             <span aria-hidden="true">←</span>
@@ -148,21 +166,29 @@ export default async function CaseStudyPage({
 
         {/* ── Hero Image ──────────────────────────────────────────────── */}
         <div className="relative z-10 mx-auto mt-10 max-w-7xl px-6 md:px-14 lg:px-20">
-          <div className="cs-rise relative w-full h-[400px] overflow-hidden rounded-xl bg-neutral-900 border border-neutral-800">
-            <Image
-              src={project.coverImageUrl ?? project.thumbnailUrl}
-              alt={`${project.title} cover image`}
-              fill
-              priority={true}
-              className="object-cover"
-              sizes="(max-width: 1280px) 100vw, 1280px"
-            />
+          <div className="cs-rise relative h-[280px] w-full overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900 sm:h-[400px]">
+            {coverSrc ? (
+              <Image
+                src={coverSrc}
+                alt={`${project.title} screenshot`}
+                fill
+                priority={true}
+                className="object-cover"
+                sizes="(max-width: 1280px) 100vw, 1280px"
+              />
+            ) : (
+              <ProjectCover
+                slug={project.slug}
+                title={project.title}
+                techStack={project.techStack}
+                size="hero"
+              />
+            )}
           </div>
         </div>
 
         {/* ── Header ──────────────────────────────────────────────────── */}
-        <header className="relative z-10 mx-auto max-w-7xl px-6 pb-16 pt-16 md:px-14 lg:px-20">
-
+        <header className="relative z-10 mx-auto max-w-7xl px-6 pt-16 pb-16 md:px-14 lg:px-20">
           {/* Chapter eyebrow */}
           <div className="cs-rise cs-d1 mb-10 flex items-center gap-3">
             <span className="cs-font-mono text-xs tracking-widest text-neutral-600 uppercase">
@@ -180,53 +206,48 @@ export default async function CaseStudyPage({
           </h1>
 
           {/* Tagline */}
-          <p className="cs-font-mono cs-rise cs-d3 mt-5 max-w-2xl text-sm font-light leading-relaxed text-neutral-400">
+          <p className="cs-font-mono cs-rise cs-d3 mt-5 max-w-2xl text-sm leading-relaxed font-light text-neutral-400">
             {project.tagline}
           </p>
 
-          {/* Metadata strip */}
-          <div className="cs-rise cs-d4 mt-10 flex flex-wrap gap-8 border-t border-neutral-800 pt-8">
-            {[
-              { label: "Role", value: roleLabel },
-              { label: "Timeframe", value: project.timeframe ?? "2025" },
-              ...(project.liveUrl
-                ? [{ label: "Live", value: project.liveUrl, href: project.liveUrl }]
-                : []),
-              ...(project.repositoryUrl
-                ? [{ label: "Repo", value: "GitHub →", href: project.repositoryUrl }]
-                : []),
-            ].map((item) => (
-              <div key={item.label} className="flex flex-col gap-1">
-                <span className="cs-font-mono text-[10px] tracking-widest text-neutral-600 uppercase">
-                  {item.label}
-                </span>
-                {"href" in item && item.href ? (
-                  <a
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="cs-font-mono text-xs text-emerald-400 transition-colors hover:text-emerald-300"
-                  >
-                    {item.value}
-                  </a>
-                ) : (
-                  <span className="cs-font-mono text-xs text-neutral-300">
-                    {item.value}
+          {/* Metadata strip — omitted entirely when nothing is known, so the
+              rule above it never dangles. */}
+          {metadata.length > 0 && (
+            <div className="cs-rise cs-d4 mt-10 flex flex-wrap gap-8 border-t border-neutral-800 pt-8">
+              {metadata.map((item) => (
+                <div key={item.label} className="flex flex-col gap-1">
+                  <span className="cs-font-mono text-[10px] tracking-widest text-neutral-600 uppercase">
+                    {item.label}
                   </span>
-                )}
-              </div>
-            ))}
-          </div>
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cs-font-mono text-xs text-emerald-400 transition-colors hover:text-emerald-300"
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    <span className="cs-font-mono text-xs text-neutral-300">
+                      {item.value}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </header>
 
         {/* ── Body ─────────────────────────────────────────────────────── */}
         <main className="relative z-10 mx-auto max-w-7xl px-6 pb-32 md:px-14 lg:px-20">
-
           {/* Animated hairline */}
-          <div aria-hidden="true" className="cs-divider mb-16 h-px w-full bg-neutral-800" />
+          <div
+            aria-hidden="true"
+            className="cs-divider mb-16 h-px w-full bg-neutral-800"
+          />
 
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
-
             {/* ── Left: Case study prose ───────────────────────────── */}
             <article className="lg:col-span-8">
               <h2 className="cs-font-mono mb-8 text-xs tracking-widest text-neutral-600 uppercase">
@@ -249,9 +270,9 @@ export default async function CaseStudyPage({
                   {project.impactMetric && (
                     <div className="bg-neutral-950 p-6">
                       <p className="cs-font-mono mb-2 text-[10px] tracking-widest text-neutral-600 uppercase">
-                        Impact
+                        Key contribution
                       </p>
-                      <p className="cs-font-mono text-xs font-light leading-relaxed text-neutral-400">
+                      <p className="cs-font-mono text-xs leading-relaxed font-light text-neutral-400">
                         {project.impactMetric}
                       </p>
                     </div>
@@ -259,9 +280,9 @@ export default async function CaseStudyPage({
                   {project.scaleMetric && (
                     <div className="bg-neutral-950 p-6">
                       <p className="cs-font-mono mb-2 text-[10px] tracking-widest text-neutral-600 uppercase">
-                        Scale
+                        Context
                       </p>
-                      <p className="cs-font-mono text-xs font-light leading-relaxed text-neutral-400">
+                      <p className="cs-font-mono text-xs leading-relaxed font-light text-neutral-400">
                         {project.scaleMetric}
                       </p>
                     </div>
@@ -271,10 +292,7 @@ export default async function CaseStudyPage({
             </article>
 
             {/* ── Right: Tech stack sidebar ────────────────────────── */}
-            <aside
-              aria-label="Technologies used"
-              className="lg:col-span-4"
-            >
+            <aside aria-label="Technologies used" className="lg:col-span-4">
               <h2 className="cs-font-mono mb-6 text-[10px] tracking-widest text-neutral-600 uppercase">
                 Tech Stack
               </h2>
@@ -314,11 +332,13 @@ function renderSimpleMarkdown(md: string): string {
       if (line.startsWith("## ")) {
         return `<h2>${escapeHtml(line.slice(3))}</h2>`;
       }
-      // Numbered list items (e.g. "1) **Title** ...")
-      const listMatch = /^\d+\)\s/.exec(line);
+      // Numbered list items (e.g. "1) **Title** ...").
+      // Items are separated by paragraphs, so each ends up in its own <ol> and
+      // would otherwise restart at 1. Carry the source number through instead.
+      const listMatch = /^(\d+)\)\s/.exec(line);
       if (listMatch) {
         const content = line.slice(listMatch[0].length);
-        return `<li>${inlineFormat(content)}</li>`;
+        return `<li value="${listMatch[1]}">${inlineFormat(content)}</li>`;
       }
       // Blank line
       if (line.trim() === "") return "";
@@ -334,8 +354,5 @@ function inlineFormat(text: string): string {
 }
 
 function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
