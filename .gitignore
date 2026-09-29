@@ -45,3 +45,21 @@ yarn-error.log*
 # idea files
 .idea
 seed/
+# Content sync backups
+/scratch/backups/
+
+# Local agent/session workflow files — not part of the portfolio release
+.claude/
+task.txt
+
+# Defective AI-generated project covers: these embed claims that are not true
+# (a "HIPAA Compliant" badge, an AWS S3 chip where the project uses Supabase,
+# a PostgreSQL layer the translator does not use) plus garbled text. The UI
+# renders ProjectCover instead. Real screenshots may be added under
+# public/images/ later; only these specific sets are excluded.
+/public/images/medi/
+/public/images/support/
+/public/images/transl/
+/public/images/baby/
+/public/images/bistro/
+/public/images/devdoc/

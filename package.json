@@ -72,6 +72,6 @@
   },
   "packageManager": "npm@11.8.0",
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx scripts/ingest-case-studies.ts --skip-embeddings"
   }
 }
