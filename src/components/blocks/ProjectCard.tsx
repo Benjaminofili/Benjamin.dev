@@ -59,7 +59,7 @@ export function ProjectCard({
     <article
       id={slug}
       aria-label={`Project: ${title}`}
-      className="group flex scroll-mt-8 flex-col bg-neutral-950 transition-colors duration-300 hover:bg-neutral-900"
+      className="group flex scroll-mt-8 flex-col bg-surface transition-colors duration-300 hover:bg-surface-raised"
       style={{ borderLeft: "2px solid transparent" }}
       onMouseEnter={(e) =>
         ((e.currentTarget as HTMLElement).style.borderLeftColor =
@@ -87,7 +87,7 @@ export function ProjectCard({
       {/* ── TOP ROW: ordinal + metadata ─────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 px-7 pt-7">
         <span
-          className="text-xs text-neutral-700"
+          className="text-xs text-neutral-600"
           style={{ fontFamily: "'DM Mono', monospace" }}
         >
           {ordinal}

@@ -5,6 +5,7 @@
  * Technical capabilities, experience and engineering approach.
  */
 
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -130,6 +131,9 @@ const ADRS = [
     id: "adr-01",
     ordinal: "ADR-01",
     decision: "Why Next.js App Router",
+    featured: true,
+    summary:
+      "Pages fetch their own data on the server, so project and case-study routes render without client-side loading states.",
     context:
       "This portfolio needed server-rendered pages, database access and a chat API in one codebase.",
     reasoning:
@@ -141,6 +145,9 @@ const ADRS = [
     id: "adr-02",
     ordinal: "ADR-02",
     decision: "Why Neon & pgvector",
+    featured: true,
+    summary:
+      "One serverless Postgres holds the projects, the articles and their embeddings, so retrieval needs no second datastore.",
     context:
       "The portfolio assistant retrieves from project write-ups, so it needs vector search alongside ordinary relational data.",
     reasoning:
@@ -152,6 +159,9 @@ const ADRS = [
     id: "adr-03",
     ordinal: "ADR-03",
     decision: "Why tRPC over REST",
+    featured: false,
+    summary:
+      "Types are shared across the client/server boundary, so a schema change surfaces as a compile error, not a runtime failure.",
     context:
       "The frontend and the Prisma-backed API are both TypeScript, and both are maintained by one person.",
     reasoning:
@@ -163,6 +173,10 @@ const ADRS = [
     id: "adr-04",
     ordinal: "ADR-04",
     decision: "Why Gemini embeddings with the Vercel AI SDK",
+    compactTitle: "Why Gemini embeddings",
+    featured: true,
+    summary:
+      "A free-tier embedding API plus one interface for tool calling and streaming, with the vector column sized to match at 768 dimensions.",
     context:
       "The assistant needed embeddings and a chat model without a paid subscription for a personal project.",
     reasoning:
@@ -195,7 +209,20 @@ const PHILOSOPHY_TENETS = [
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
-export default function TheWorkshop() {
+export type WorkshopVariant = "full" | "compact";
+
+/**
+ * Rendered in two places: compact on the homepage, where the engineering
+ * decisions are supporting evidence rather than the headline, and full on
+ * /workshop, which keeps the complete records.
+ */
+export default function TheWorkshop({
+  variant = "full",
+}: {
+  variant?: WorkshopVariant;
+}) {
+  const isCompact = variant === "compact";
+  const decisions = isCompact ? ADRS.filter((adr) => adr.featured) : ADRS;
   return (
     <>
       <style>{`
@@ -233,7 +260,7 @@ export default function TheWorkshop() {
           transition: background-color 0.2s ease, border-left-color 0.2s ease;
         }
         .ws-layer-card:hover {
-          background-color: rgba(255,255,255,0.02);
+          background-color: var(--hover-wash);
           border-left-color: rgba(52,211,153,0.45);
         }
 
@@ -260,7 +287,7 @@ export default function TheWorkshop() {
         }
         .ws-phil-card:hover {
           border-color: rgba(52,211,153,0.2);
-          background-color: rgba(255,255,255,0.018);
+          background-color: var(--hover-wash);
         }
 
         /* Badge hover */
@@ -334,10 +361,10 @@ export default function TheWorkshop() {
                   key={layer.id}
                   aria-label={`Capability area: ${layer.label}`}
                 >
-                  <Card className="ws-layer-card h-full rounded-none border border-transparent bg-neutral-950 shadow-none">
+                  <Card className="ws-layer-card h-full rounded-none border border-transparent bg-surface shadow-none">
                     <CardContent className="p-7">
                       {/* Ordinal */}
-                      <span className="ws-font-mono mb-6 block text-xs text-neutral-700">
+                      <span className="ws-font-mono mb-6 block text-xs text-neutral-600">
                         {layer.ordinal}
                       </span>
 
@@ -387,7 +414,7 @@ export default function TheWorkshop() {
             >
               Experience
             </h2>
-            <article className="border border-l-2 border-neutral-800 border-l-emerald-900 bg-neutral-950 p-7">
+            <article className="border border-l-2 border-neutral-800 border-l-emerald-900 bg-surface p-7">
               <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                 <h3 className="ws-font-display text-xl text-neutral-100">
                   {EXPERIENCE.role} · {EXPERIENCE.org}
@@ -399,7 +426,7 @@ export default function TheWorkshop() {
               <ul className="ws-font-mono mt-5 flex flex-col gap-2 text-sm leading-relaxed font-light text-neutral-400">
                 {EXPERIENCE.points.map((point) => (
                   <li key={point} className="flex gap-3">
-                    <span aria-hidden="true" className="text-neutral-700">
+                    <span aria-hidden="true" className="text-neutral-600">
                       —
                     </span>
                     {point}
@@ -413,82 +440,111 @@ export default function TheWorkshop() {
               DECISIONS
           ══════════════════════════════════════════════════════════ */}
           <section aria-labelledby="adr-heading" className="mt-24">
-            {/* Hairline */}
             <div
               aria-hidden="true"
               className="ws-divider mb-12 h-px w-full bg-neutral-800"
             />
 
-            {/* Section header row */}
             <div className="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <h2
                 id="adr-heading"
                 className="ws-font-mono text-xs tracking-widest text-neutral-600 uppercase"
               >
-                Decisions Behind This Portfolio
+                Engineering Decisions
               </h2>
-              <p className="ws-font-mono text-xs text-neutral-700">
-                Short records of why this site is built the way it is.
+              <p className="ws-font-mono text-xs text-neutral-600">
+                {isCompact
+                  ? "Why this site is built the way it is."
+                  : "Short records of why this site is built the way it is."}
               </p>
             </div>
 
-            {/*
-             * <dl> wraps the ADR list for GEO: each accordion item is a
-             * named decision with a structured rationale AI agents can extract.
-             */}
-            <Accordion className="flex flex-col gap-px">
-              {ADRS.map((adr) => (
-                <AccordionItem
-                  key={adr.id}
-                  value={adr.id}
-                  className="ws-adr-item border border-l-2 border-neutral-800 border-l-neutral-800 bg-neutral-950 px-0 transition-all duration-200"
-                >
-                  <AccordionTrigger className="ws-adr-trigger ws-font-mono group flex w-full items-center gap-5 px-7 py-5 text-left text-sm text-neutral-300 no-underline hover:no-underline [&>svg]:text-neutral-700 [&>svg]:transition-colors [&[data-state=open]>svg]:text-emerald-600">
-                    <span className="ws-adr-ordinal ws-font-mono shrink-0 text-xs text-neutral-700 transition-colors">
-                      {adr.ordinal}
-                    </span>
-                    <span className="ws-font-display text-lg leading-snug text-neutral-100 group-hover:text-neutral-50">
-                      {adr.decision}
-                    </span>
-                  </AccordionTrigger>
-
-                  <AccordionContent className="px-7 pt-0 pb-7">
-                    {/* Indent to align with title text */}
-                    <div className="ml-14 flex flex-col gap-6 border-l border-neutral-800 pl-6">
-                      {/* Context */}
-                      <div>
-                        <p className="ws-font-mono mb-2 text-xs tracking-widest text-neutral-600 uppercase">
-                          Context
-                        </p>
-                        <p className="ws-font-mono text-sm leading-relaxed font-light text-neutral-400">
-                          {adr.context}
-                        </p>
-                      </div>
-
-                      {/* Reasoning */}
-                      <div>
-                        <p className="ws-font-mono mb-2 text-xs tracking-widest text-neutral-600 uppercase">
-                          Reasoning
-                        </p>
-                        <p className="ws-font-mono text-sm leading-relaxed font-light text-neutral-400">
-                          {adr.reasoning}
-                        </p>
-                      </div>
-
-                      {/* Tradeoffs */}
-                      <div>
-                        <p className="ws-font-mono mb-2 text-xs tracking-widest text-emerald-800 uppercase">
-                          Tradeoffs
-                        </p>
-                        <p className="ws-font-mono text-sm leading-relaxed font-light text-neutral-500">
-                          {adr.tradeoffs}
-                        </p>
-                      </div>
+            {isCompact ? (
+              /* Compact: scannable in a few seconds, and visually lighter than
+                 the project and experience blocks above it. */
+              <>
+                <dl className="grid grid-cols-1 gap-px bg-neutral-800 md:grid-cols-3">
+                  {decisions.map((adr) => (
+                    <div key={adr.id} className="bg-surface p-7">
+                      <dt>
+                        <span className="ws-font-mono mb-4 block text-xs text-neutral-600">
+                          {adr.ordinal}
+                        </span>
+                        <span className="ws-font-display block text-lg leading-snug text-neutral-100">
+                          {"compactTitle" in adr ? adr.compactTitle : adr.decision}
+                        </span>
+                      </dt>
+                      <dd className="ws-font-mono mt-3 text-xs leading-relaxed font-light text-neutral-400">
+                        {adr.summary}
+                      </dd>
                     </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                  ))}
+                </dl>
+
+                <Link
+                  href="/workshop#adr-heading"
+                  className="ws-font-mono group mt-8 inline-flex items-center gap-2 text-xs text-neutral-500 transition-colors duration-200 hover:text-emerald-400 focus-visible:ring-1 focus-visible:ring-emerald-500 focus-visible:outline-none"
+                >
+                  Full records, with context and tradeoffs
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform duration-200 group-hover:translate-x-0.5"
+                  >
+                    &rarr;
+                  </span>
+                </Link>
+              </>
+            ) : (
+              <Accordion className="flex flex-col gap-px">
+                {decisions.map((adr) => (
+                  <AccordionItem
+                    key={adr.id}
+                    value={adr.id}
+                    className="ws-adr-item border border-l-2 border-neutral-800 border-l-neutral-800 bg-surface px-0 transition-all duration-200"
+                  >
+                    <AccordionTrigger className="ws-adr-trigger ws-font-mono group flex w-full items-center gap-5 px-7 py-5 text-left text-sm text-neutral-300 no-underline hover:no-underline [&>svg]:text-neutral-600 [&>svg]:transition-colors [&[data-state=open]>svg]:text-emerald-600">
+                      <span className="ws-adr-ordinal ws-font-mono shrink-0 text-xs text-neutral-600 transition-colors">
+                        {adr.ordinal}
+                      </span>
+                      <span className="ws-font-display text-lg leading-snug text-neutral-100 group-hover:text-neutral-50">
+                        {adr.decision}
+                      </span>
+                    </AccordionTrigger>
+
+                    <AccordionContent className="px-7 pt-0 pb-7">
+                      <div className="ml-14 flex flex-col gap-6 border-l border-neutral-800 pl-6">
+                        <div>
+                          <p className="ws-font-mono mb-2 text-xs tracking-widest text-neutral-600 uppercase">
+                            Context
+                          </p>
+                          <p className="ws-font-mono text-sm leading-relaxed font-light text-neutral-400">
+                            {adr.context}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="ws-font-mono mb-2 text-xs tracking-widest text-neutral-600 uppercase">
+                            Reasoning
+                          </p>
+                          <p className="ws-font-mono text-sm leading-relaxed font-light text-neutral-400">
+                            {adr.reasoning}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="ws-font-mono mb-2 text-xs tracking-widest text-emerald-700 uppercase">
+                            Tradeoffs
+                          </p>
+                          <p className="ws-font-mono text-sm leading-relaxed font-light text-neutral-500">
+                            {adr.tradeoffs}
+                          </p>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
           </section>
 
           {/* ══════════════════════════════════════════════════════════
@@ -509,7 +565,7 @@ export default function TheWorkshop() {
               >
                 Engineering Approach
               </h2>
-              <p className="ws-font-mono text-xs text-neutral-700">
+              <p className="ws-font-mono text-xs text-neutral-600">
                 How I try to work.
               </p>
             </div>
@@ -521,10 +577,10 @@ export default function TheWorkshop() {
                   key={tenet.id}
                   aria-label={`Engineering standard: ${tenet.title}`}
                 >
-                  <Card className="ws-phil-card h-full rounded-none border border-transparent bg-neutral-950 shadow-none">
+                  <Card className="ws-phil-card h-full rounded-none border border-transparent bg-surface shadow-none">
                     <CardContent className="p-7">
                       {/* Ordinal */}
-                      <span className="ws-font-mono mb-8 block text-xs text-neutral-700">
+                      <span className="ws-font-mono mb-8 block text-xs text-neutral-600">
                         {tenet.ordinal}
                       </span>
 

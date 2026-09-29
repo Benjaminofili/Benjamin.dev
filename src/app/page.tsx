@@ -92,7 +92,7 @@ export default async function Home() {
 
         {/* ── Chapter 02: The Workshop ───────────────────────────────────── */}
         <section id="workshop">
-          <TheWorkshop />
+          <TheWorkshop variant="compact" />
         </section>
 
         {/* ── Chapter 03: The Lab ────────────────────────────────────────── */}
@@ -148,7 +148,7 @@ export default async function Home() {
             {/* Filler to hide container background on odd-count grids */}
             {projects.length % 2 !== 0 && (
               <div
-                className="hidden bg-neutral-950 lg:block"
+                className="hidden bg-surface lg:block"
                 aria-hidden="true"
               />
             )}
@@ -156,7 +156,7 @@ export default async function Home() {
 
           {/* ── View More CTA ─────────────────────────────────────────────── */}
           {hasMore && (
-            <div className="mt-px flex items-center justify-between border-t border-neutral-800 bg-neutral-950 px-8 py-10">
+            <div className="mt-px flex items-center justify-between border-t border-neutral-800 bg-surface px-8 py-10">
               <p className="id-font-mono text-xs tracking-widest text-neutral-500 uppercase">
                 Showing {projects.length} of {allProjects.length} projects
               </p>

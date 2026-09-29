@@ -104,7 +104,7 @@ export function ArticleCard({
         }
         .ac-card:hover {
           border-left-color: rgba(52, 211, 153, 0.45);
-          background-color:  rgba(255, 255, 255, 0.018);
+          background-color: var(--hover-wash);
         }
 
         .ac-cta {
@@ -131,7 +131,7 @@ export function ArticleCard({
         .ac-sep::before {
           content: '·';
           margin: 0 0.4rem;
-          color: rgba(255,255,255,0.15);
+          color: var(--watermark);
         }
 
         .ac-card:hover .ac-title {
@@ -146,11 +146,11 @@ export function ArticleCard({
       `}</style>
 
       <article aria-label={`Article: ${title}`}>
-        <Card className="ac-card rounded-none border border-neutral-800 border-l-2 bg-neutral-950 shadow-none">
+        <Card className="ac-card rounded-none border border-neutral-800 border-l-2 bg-surface shadow-none">
           <CardContent className="p-7 sm:p-8">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <span className="ac-font-mono text-xs text-neutral-700">
+                <span className="ac-font-mono text-xs text-neutral-600">
                   {ordinal}
                 </span>
                 <Badge

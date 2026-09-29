@@ -31,7 +31,7 @@ function ProjectGrid({ projects }: { projects: LabProject[] }) {
         />
       ))}
       {projects.length % 2 !== 0 && (
-        <div className="hidden bg-neutral-950 lg:block" aria-hidden="true" />
+        <div className="hidden bg-surface lg:block" aria-hidden="true" />
       )}
     </div>
   );

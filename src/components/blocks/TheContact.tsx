@@ -56,7 +56,7 @@ export default function TheContact() {
 
       <dl className="grid grid-cols-1 gap-px bg-neutral-800 sm:grid-cols-2 lg:grid-cols-4">
         {LINKS.map((item) => (
-          <div key={item.label} className="bg-neutral-950 p-7">
+          <div key={item.label} className="bg-surface p-7">
             <dt className="id-font-mono mb-3 text-[10px] tracking-widest text-neutral-600 uppercase">
               {item.label}
             </dt>
@@ -75,7 +75,7 @@ export default function TheContact() {
         ))}
       </dl>
 
-      <p className="id-font-mono mt-16 text-center text-xs text-neutral-700">
+      <p className="id-font-mono mt-16 text-center text-xs text-neutral-600">
         © {new Date().getFullYear()} {PROFILE.name}
       </p>
     </section>

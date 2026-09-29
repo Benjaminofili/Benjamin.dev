@@ -60,13 +60,13 @@ export function ProjectCover({
   return (
     <div
       aria-hidden="true"
-      className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-neutral-950"
+      className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-surface"
     >
       {/* Emerald bloom — mirrors the hero and workshop section blooms */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `radial-gradient(${accent}, rgba(52,211,153,0.10) 0%, transparent 70%)`,
+          background: `radial-gradient(${accent}, var(--accent-soft) 0%, transparent 70%)`,
         }}
       />
 
@@ -75,14 +75,14 @@ export function ProjectCover({
         className="pointer-events-none absolute inset-0 opacity-[0.55]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px)",
+            "linear-gradient(to right, var(--grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px)",
           backgroundSize: isHero ? "72px 72px" : "44px 44px",
         }}
       />
 
       <div className={`relative flex items-start justify-between ${pad}`}>
         <span
-          className="text-neutral-700"
+          className="text-neutral-600"
           style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: isHero ? "11px" : "9px",
@@ -104,7 +104,7 @@ export function ProjectCover({
         className={`relative flex min-h-0 flex-1 items-center overflow-hidden ${padX}`}
       >
         <span
-          className={`leading-none text-neutral-100/[0.07] select-none ${
+          className={`leading-none text-[color:var(--watermark)] select-none ${
             isHero
               ? "text-[3.5rem] sm:text-[9rem]"
               : "text-[3.25rem] sm:text-[5.5rem]"

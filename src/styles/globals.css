@@ -9,6 +9,37 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+/* ─── Portfolio theme tokens ──────────────────────────────────────────────
+ * The site was written against Tailwind's neutral scale (bg-neutral-950,
+ * text-neutral-400, border-neutral-800 …) in ~250 places. Rather than rewrite
+ * every component, the scale itself is remapped onto semantic variables that
+ * flip between themes. `inline` keeps the var() reference in the generated
+ * utilities, so changing the variable at runtime re-themes the whole site.
+ *
+ * The scale reads dark-to-light in dark mode and inverts in light mode:
+ *   950 page background · 900 surface · 800 hairline/border
+ *   700–500 muted text · 400–300 secondary text · 200–50 primary text
+ */
+@theme inline {
+  --color-neutral-950: var(--bg);
+  --color-neutral-900: var(--surface);
+  --color-neutral-800: var(--border);
+  --color-neutral-700: var(--border-strong);
+  --color-neutral-600: var(--text-muted);
+  --color-neutral-500: var(--text-muted-strong);
+  --color-neutral-400: var(--text-secondary);
+  --color-neutral-300: var(--text-secondary-strong);
+  --color-neutral-200: var(--text-primary-soft);
+  --color-neutral-100: var(--text-primary);
+  --color-neutral-50: var(--text-heading);
+
+  /* Semantic aliases used directly by newer markup. */
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-hairline: var(--border);
+  --color-on-accent: var(--on-accent);
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
@@ -119,6 +150,87 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* ─── Dark theme (default) ────────────────────────────────────────────────
+ * Previously the page and every card were both neutral-950, so surfaces only
+ * read as surfaces because of 1px gap lines. The background is now lifted off
+ * pure black and surfaces sit clearly above it. Muted text is raised too —
+ * recruiter-facing copy was sitting near the contrast floor.
+ */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b0d0e;
+  --surface: #111315;
+  --surface-raised: #171a1c;
+  --border: #23282b;
+  --border-strong: #333a3e;
+
+  --text-heading: #f4f6f5;
+  --text-primary: #e8ebea;
+  --text-primary-soft: #d3d8d6;
+  --text-secondary-strong: #b4bbb8;
+  --text-secondary: #9aa2a0;
+  --text-muted-strong: #919997;
+  --text-muted: #828a88;
+
+  --accent-soft: rgba(52, 211, 153, 0.1);
+  --accent-line: rgba(52, 211, 153, 0.45);
+  --grid-line: rgba(255, 255, 255, 0.04);
+  --hover-wash: rgba(255, 255, 255, 0.03);
+  --glass: rgba(10, 12, 13, 0.88);
+  --watermark: rgba(244, 246, 245, 0.07);
+  --on-accent: #07130e;
+}
+
+/* ─── Light theme ─────────────────────────────────────────────────────────
+ * A warm editorial palette rather than an inversion of the dark one: paper
+ * background, ink-charcoal text, and the same emerald accent. The neutral
+ * scale inverts, so 950 becomes the lightest surface and 50 the darkest ink.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f6f5f1;
+  --surface: #fdfcfa;
+  --surface-raised: #ffffff;
+  --border: #e2ded4;
+  --border-strong: #cec9bc;
+
+  --text-heading: #1b1a17;
+  --text-primary: #24231f;
+  --text-primary-soft: #333029;
+  --text-secondary-strong: #46423a;
+  --text-secondary: #5a554b;
+  --text-muted-strong: #625c4d;
+  --text-muted: #767060;
+
+  --accent-soft: rgba(5, 150, 105, 0.08);
+  --accent-line: rgba(5, 150, 105, 0.45);
+  --grid-line: rgba(27, 26, 23, 0.05);
+  --hover-wash: rgba(27, 26, 23, 0.035);
+  --glass: rgba(252, 251, 248, 0.92);
+  --watermark: rgba(27, 26, 23, 0.07);
+  --on-accent: #ffffff;
+}
+
+/* The emerald accent needs more weight on paper than on a dark ground. */
+:root[data-theme="light"] {
+  --color-emerald-400: #047857;
+  --color-emerald-500: #046c4e;
+  --color-emerald-600: #03543b;
+}
+
+/* Colour transitions on an explicit theme change only, never on load. */
+:root[data-theme-transition] *,
+:root[data-theme-transition] *::before,
+:root[data-theme-transition] *::after {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 @layer base {

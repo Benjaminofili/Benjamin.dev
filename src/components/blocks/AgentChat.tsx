@@ -253,7 +253,7 @@ export function AgentChat() {
 
         /* Glass panel */
         .ac-glass {
-          background-color: rgba(10, 10, 10, 0.88);
+          background-color: var(--glass);
           backdrop-filter: blur(20px) saturate(160%);
           -webkit-backdrop-filter: blur(20px) saturate(160%);
         }
@@ -347,7 +347,7 @@ export function AgentChat() {
 
                     {/* Suggested prompts */}
                     <div className="mt-6 flex flex-col gap-2">
-                      <p className="ac-font-mono mb-1 text-xs tracking-widest text-neutral-700 uppercase">
+                      <p className="ac-font-mono mb-1 text-xs tracking-widest text-neutral-600 uppercase">
                         Suggested
                       </p>
                       {SUGGESTED_PROMPTS.map((prompt) => (
@@ -359,7 +359,7 @@ export function AgentChat() {
                           {prompt}
                           <span
                             aria-hidden="true"
-                            className="ml-1 text-neutral-700"
+                            className="ml-1 text-neutral-600"
                           >
                             →
                           </span>
@@ -475,7 +475,7 @@ export function AgentChat() {
                     placeholder="Ask about projects, skills, experience…"
                     disabled={isLoading}
                     aria-label="Message input"
-                    className="ac-input ac-font-mono h-9 flex-1 rounded-none border-neutral-800 bg-neutral-900 px-3 text-xs text-neutral-300 placeholder:text-neutral-700 focus-visible:ring-0"
+                    className="ac-input ac-font-mono h-9 flex-1 rounded-none border-neutral-800 bg-neutral-900 px-3 text-xs text-neutral-300 placeholder:text-neutral-600 focus-visible:ring-0"
                   />
 
                   <Button
@@ -490,7 +490,7 @@ export function AgentChat() {
                 </form>
 
                 {/* Footer attribution */}
-                <p className="ac-font-mono mt-2.5 text-center text-xs text-neutral-700">
+                <p className="ac-font-mono mt-2.5 text-center text-xs text-neutral-600">
                   Powered by Gemini · pgvector · Vercel AI SDK
                 </p>
               </div>
@@ -505,7 +505,7 @@ export function AgentChat() {
           aria-haspopup="dialog"
           aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
           className={`ac-fab pointer-events-auto flex h-12 w-12 items-center justify-center border border-neutral-700 bg-neutral-950 text-neutral-100 shadow-lg focus-visible:outline-none ${
-            isOpen ? "ac-fab-open text-neutral-950" : ""
+            isOpen ? "ac-fab-open text-on-accent" : ""
           }`}
         >
           {isOpen ? (

@@ -99,12 +99,12 @@ export default async function CaseStudyPage({
           font-family: 'Instrument Serif', Georgia, serif;
           font-size: 1.5rem;
           line-height: 1.4;
-          color: #f5f5f5;
+          color: var(--text-heading);
           margin-top: 2.5rem;
           margin-bottom: 0.75rem;
         }
         .cs-prose strong {
-          color: #e5e5e5;
+          color: var(--text-primary-soft);
           font-weight: 500;
         }
         .cs-prose p {
@@ -112,7 +112,7 @@ export default async function CaseStudyPage({
           font-size: 0.8125rem;
           font-weight: 300;
           line-height: 1.9;
-          color: #737373;
+          color: var(--text-secondary);
           margin-bottom: 1rem;
         }
         .cs-prose ol {
@@ -127,7 +127,7 @@ export default async function CaseStudyPage({
           font-size: 0.8125rem;
           font-weight: 300;
           line-height: 1.9;
-          color: #737373;
+          color: var(--text-secondary);
         }
 
         /* Hairline */
@@ -268,7 +268,7 @@ export default async function CaseStudyPage({
               {(project.impactMetric ?? project.scaleMetric) && (
                 <div className="mt-12 grid grid-cols-1 gap-px bg-neutral-800 sm:grid-cols-2">
                   {project.impactMetric && (
-                    <div className="bg-neutral-950 p-6">
+                    <div className="bg-surface p-6">
                       <p className="cs-font-mono mb-2 text-[10px] tracking-widest text-neutral-600 uppercase">
                         Key contribution
                       </p>
@@ -278,7 +278,7 @@ export default async function CaseStudyPage({
                     </div>
                   )}
                   {project.scaleMetric && (
-                    <div className="bg-neutral-950 p-6">
+                    <div className="bg-surface p-6">
                       <p className="cs-font-mono mb-2 text-[10px] tracking-widest text-neutral-600 uppercase">
                         Context
                       </p>
@@ -303,7 +303,7 @@ export default async function CaseStudyPage({
                     className="cs-font-mono flex items-center gap-3 border-l border-neutral-800 py-1 pl-4 text-xs text-neutral-400 transition-colors duration-200 hover:border-emerald-800 hover:text-neutral-300"
                     style={{ animationDelay: `${0.35 + i * 0.06}s` }}
                   >
-                    <span aria-hidden="true" className="text-neutral-700">
+                    <span aria-hidden="true" className="text-neutral-600">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     {tech}

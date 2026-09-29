@@ -71,7 +71,7 @@ export default async function TheLens() {
 
       <div className="grid grid-cols-1 gap-px bg-neutral-800 md:grid-cols-3">
         {LENSES.map((lens) => (
-          <article key={lens.title} className="bg-neutral-950 p-7">
+          <article key={lens.title} className="bg-surface p-7">
             <h3 className="id-font-display mb-4 text-xl leading-snug text-neutral-100">
               {lens.title}
             </h3>

@@ -57,7 +57,7 @@ export default function TheJourney() {
 
       <ol className="grid grid-cols-1 gap-px bg-neutral-800 lg:grid-cols-3">
         {MILESTONES.map((m) => (
-          <li key={m.title} className="flex flex-col gap-3 bg-neutral-950 p-7">
+          <li key={m.title} className="flex flex-col gap-3 bg-surface p-7">
             <div className="flex items-center justify-between gap-3">
               <span className="id-font-mono text-xs text-neutral-600">
                 {m.when}

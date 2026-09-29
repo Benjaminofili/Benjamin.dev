@@ -76,7 +76,7 @@ export function HeroSection() {
           transition: background-color 0.2s ease, border-color 0.2s ease;
         }
         .id-card:hover {
-          background-color: rgba(255, 255, 255, 0.025);
+          background-color: var(--hover-wash);
           border-color: rgba(52, 211, 153, 0.25) !important;
         }
 
@@ -153,7 +153,7 @@ export function HeroSection() {
                 >
                   <Button
                     size="lg"
-                    className="id-cta-primary id-font-mono rounded-none bg-emerald-500 px-8 text-sm font-medium tracking-wide text-neutral-950 transition-all duration-200 hover:bg-emerald-400 focus-visible:outline-none"
+                    className="id-cta-primary id-font-mono rounded-none bg-emerald-500 px-8 text-sm font-medium tracking-wide text-on-accent transition-all duration-200 hover:bg-emerald-400 focus-visible:outline-none"
                   >
                     View The Workshop
                   </Button>
@@ -233,11 +233,11 @@ export function HeroSection() {
             {PILLARS.map((p, i) => (
               <Card
                 key={p.id}
-                className={`id-card id-rise id-d${i + 5} rounded-none border border-transparent bg-neutral-950`}
+                className={`id-card id-rise id-d${i + 5} rounded-none border border-transparent bg-surface`}
               >
                 <CardContent className="p-8">
                   {/* Ordinal */}
-                  <span className="id-font-mono mb-8 block text-xs text-neutral-700">
+                  <span className="id-font-mono mb-8 block text-xs text-neutral-600">
                     {p.id}
                   </span>
 
