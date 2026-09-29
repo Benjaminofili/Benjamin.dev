@@ -94,7 +94,10 @@ function SendIcon({ className }: { className?: string }) {
 
 function TypingIndicator() {
   return (
-    <div className="flex items-center gap-1 px-1 py-2" aria-label="Assistant is typing">
+    <div
+      className="flex items-center gap-1 px-1 py-2"
+      aria-label="Assistant is typing"
+    >
       {[0, 1, 2].map((i) => (
         <span
           key={i}
@@ -112,9 +115,9 @@ function TypingIndicator() {
 /* ─── Suggested prompts ──────────────────────────────────────────────────── */
 
 const SUGGESTED_PROMPTS = [
-  "What is his experience with Next.js?",
-  "Describe his approach to RAG pipelines.",
-  "What are his strongest engineering skills?",
+  "Which projects best show his backend skills?",
+  "What did he build at Imansoft?",
+  "What is he studying and looking for?",
 ];
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
@@ -150,7 +153,8 @@ export function AgentChat() {
     return message.parts
       .filter(
         (part): part is { type: "text"; text: string } =>
-          part.type === "text" && typeof (part as { text?: unknown }).text === "string",
+          part.type === "text" &&
+          typeof (part as { text?: unknown }).text === "string",
       )
       .map((part) => part.text)
       .join("\n");
@@ -269,38 +273,37 @@ export function AgentChat() {
 
       {/* ── Portal root: fixed, full-screen, pointer-events-none base ─ */}
       <div
-        className="fixed inset-0 z-50 flex flex-col items-end justify-end gap-4 p-5 pointer-events-none sm:p-6"
-        aria-label="Agentic AI Assistant"
+        className="pointer-events-none fixed inset-0 z-50 flex flex-col items-end justify-end gap-4 p-5 sm:p-6"
+        aria-label="Portfolio Assistant"
       >
-
         {/* ── Chat window ─────────────────────────────────────────── */}
         {isOpen && (
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Agentic AI Assistant chat window"
+            aria-label="Portfolio Assistant chat window"
             className="ac-window-enter ac-glass pointer-events-auto flex w-full flex-col border border-neutral-800 shadow-2xl sm:w-96"
             style={{ height: "520px", maxHeight: "calc(100dvh - 96px)" }}
           >
             <Card className="flex h-full flex-col rounded-none border-0 bg-transparent shadow-none">
-
               {/* ── Header ────────────────────────────────────────── */}
               <div className="flex shrink-0 items-center justify-between border-b border-neutral-800 px-5 py-4">
-
                 <div className="flex items-center gap-3">
                   {/* Pulsing indicator — signals live/connected */}
                   <span className="relative flex h-2 w-2">
                     <span
                       aria-hidden="true"
                       className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60"
-                      style={{ animation: "ac-typing-bounce 2s ease-in-out infinite" }}
+                      style={{
+                        animation: "ac-typing-bounce 2s ease-in-out infinite",
+                      }}
                     />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                   </span>
 
                   <div>
-                    <p className="ac-font-display text-sm text-neutral-100 leading-none">
-                      Agentic AI Assistant
+                    <p className="ac-font-display text-sm leading-none text-neutral-100">
+                      Portfolio Assistant
                     </p>
                     <p className="ac-font-mono mt-1 text-xs text-neutral-600">
                       RAG · Neon pgvector · Gemini
@@ -319,7 +322,7 @@ export function AgentChat() {
                   <button
                     onClick={() => setIsOpen(false)}
                     aria-label="Close chat window"
-                    className="flex h-6 w-6 items-center justify-center text-neutral-600 transition-colors hover:text-neutral-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+                    className="flex h-6 w-6 items-center justify-center text-neutral-600 transition-colors hover:text-neutral-300 focus-visible:ring-1 focus-visible:ring-emerald-500 focus-visible:outline-none"
                   >
                     <CloseIcon className="h-3.5 w-3.5" />
                   </button>
@@ -328,19 +331,17 @@ export function AgentChat() {
 
               {/* ── Message area ──────────────────────────────────── */}
               <ScrollArea className="ac-scroll flex-1 overflow-hidden px-5 py-5">
-
                 {/* Empty state — show suggested prompts */}
                 {messages.length === 0 && (
                   <div className="flex h-full flex-col justify-between">
-
                     {/* Welcome copy */}
                     <div>
                       <p className="ac-font-display mb-1 text-lg text-neutral-200">
                         Ask me anything.
                       </p>
-                      <p className="ac-font-mono text-xs font-light leading-relaxed text-neutral-600">
-                        I have full context on this engineer&apos;s architecture decisions,
-                        projects, and technical philosophy.
+                      <p className="ac-font-mono text-xs leading-relaxed font-light text-neutral-600">
+                        I can answer questions about his projects, skills,
+                        education and experience, based on this portfolio.
                       </p>
                     </div>
 
@@ -353,10 +354,15 @@ export function AgentChat() {
                         <button
                           key={prompt}
                           onClick={() => handleSuggestedPrompt(prompt)}
-                          className="ac-prompt-chip ac-font-mono w-full border border-neutral-800 bg-transparent px-3 py-2.5 text-left text-xs text-neutral-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+                          className="ac-prompt-chip ac-font-mono w-full border border-neutral-800 bg-transparent px-3 py-2.5 text-left text-xs text-neutral-500 focus-visible:ring-1 focus-visible:ring-emerald-500 focus-visible:outline-none"
                         >
                           {prompt}
-                          <span aria-hidden="true" className="ml-1 text-neutral-700">→</span>
+                          <span
+                            aria-hidden="true"
+                            className="ml-1 text-neutral-700"
+                          >
+                            →
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -395,7 +401,7 @@ export function AgentChat() {
                             className={`max-w-xs flex-1 ${isUser ? "flex flex-col items-end" : ""}`}
                           >
                             <p
-                              className={`ac-font-mono inline-block px-3 py-2.5 text-xs font-light leading-relaxed ${
+                              className={`ac-font-mono inline-block px-3 py-2.5 text-xs leading-relaxed font-light ${
                                 isUser
                                   ? "bg-neutral-800 text-neutral-200"
                                   : "bg-transparent text-neutral-300"
@@ -422,7 +428,7 @@ export function AgentChat() {
                         <TypingIndicator />
                       </div>
                     )}
-                    
+
                     {/* Error message */}
                     {error && (
                       <div className="ac-msg flex gap-3">
@@ -435,8 +441,9 @@ export function AgentChat() {
                           </AvatarFallback>
                         </Avatar>
                         <div className="max-w-xs flex-1">
-                          <p className="ac-font-mono inline-block border border-red-900/50 bg-red-950/20 px-3 py-2.5 text-xs font-light leading-relaxed text-red-400">
-                            Connection failed. Ensure the database is active and reachable. ({error.message})
+                          <p className="ac-font-mono inline-block border border-red-900/50 bg-red-950/20 px-3 py-2.5 text-xs leading-relaxed font-light text-red-400">
+                            Connection failed. Ensure the database is active and
+                            reachable. ({error.message})
                           </p>
                         </div>
                       </div>
@@ -465,7 +472,7 @@ export function AgentChat() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask about architecture, projects…"
+                    placeholder="Ask about projects, skills, experience…"
                     disabled={isLoading}
                     aria-label="Message input"
                     className="ac-input ac-font-mono h-9 flex-1 rounded-none border-neutral-800 bg-neutral-900 px-3 text-xs text-neutral-300 placeholder:text-neutral-700 focus-visible:ring-0"
@@ -487,7 +494,6 @@ export function AgentChat() {
                   Powered by Gemini · pgvector · Vercel AI SDK
                 </p>
               </div>
-
             </Card>
           </div>
         )}
@@ -512,12 +518,11 @@ export function AgentChat() {
           {!hasInteracted && !isOpen && (
             <span
               aria-hidden="true"
-              className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-emerald-500"
+              className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-emerald-500"
               style={{ animation: "ac-typing-bounce 2s ease-in-out infinite" }}
             />
           )}
         </button>
-
       </div>
     </>
   );

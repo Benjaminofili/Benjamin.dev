@@ -2,38 +2,33 @@
 
 /**
  * HeroSection — Chapter 01
- * Anthology Developer Portfolio · 2026
- *
- * Stack:  Next.js 15 App Router · React 19 · Tailwind CSS · Shadcn UI
- * Theme:  Quiet Minimalism · Dark-mode native
- * Method: Zoom-In narrative (broad identity → specific beliefs)
- * GEO:    Semantic HTML, declarative headings, short sentences (≤20 words)
+ * Identity, location, education and availability.
  */
 
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { Card, CardContent } from "~/components/ui/card";
+import { PROFILE } from "~/lib/profile";
 
-/* ─── Engineering Beliefs ───────────────────────────────────────────────── */
-const PRINCIPLES = [
+/* ─── What I bring ──────────────────────────────────────────────────────── */
+const PILLARS = [
   {
     id: "01",
-    title: "Type-Safe Data Flow",
+    title: "Software Engineering Foundation",
     description:
-      "Every contract between system layers is enforced at compile time. Runtime surprises are architectural failures, not edge cases.",
+      "Advanced Diploma in Software Engineering (Distinction) and a software engineering internship. I build across web, mobile and backend.",
   },
   {
     id: "02",
-    title: "Edge-First Architecture",
+    title: "Applied AI & Integration",
     description:
-      "Latency is a product decision. Compute lives where users live — at the network edge, not the data center.",
+      "Retrieval-augmented generation, on-device ML and third-party API integration, built into working products.",
   },
   {
     id: "03",
-    title: "RAG Pipeline Mastery",
+    title: "Business & Data Direction",
     description:
-      "Retrieval-Augmented Generation is the foundation of trustworthy AI. Context accuracy determines system credibility.",
+      "Final-year Business Computing and Data Analytics student, growing into business intelligence, analytics and systems analysis.",
   },
 ];
 
@@ -105,8 +100,7 @@ export function HeroSection() {
       `}</style>
 
       {/* ── Root shell ─────────────────────────────────────────────────── */}
-      <div className="id-grain relative min-h-screen bg-neutral-950 text-neutral-100 overflow-hidden">
-
+      <div className="id-grain relative min-h-screen overflow-hidden bg-neutral-950 text-neutral-100">
         {/* Background accent — low-opacity radial bloom */}
         <div
           aria-hidden="true"
@@ -119,7 +113,6 @@ export function HeroSection() {
 
         {/* ── Chapter 01 · Identity — HEADER ─────────────────────────── */}
         <header className="relative z-10 mx-auto max-w-7xl px-6 pt-20 pb-20 md:px-14 lg:px-20">
-
           {/* Chapter eyebrow label */}
           <div className="id-rise id-d1 mb-14 flex items-center gap-3">
             <span className="id-font-mono text-xs tracking-widest text-neutral-600 uppercase">
@@ -133,29 +126,31 @@ export function HeroSection() {
 
           {/* Two-column layout on large screens */}
           <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-8">
-
             {/* ── Left: Headline + CTAs (spans 7 cols) ──────────────── */}
             <div className="lg:col-span-7">
-
-              {/* Hero statement — GEO: declarative, ≤20 words per sentence */}
               <h1 className="id-font-display id-rise id-d2 text-5xl leading-tight text-neutral-50 sm:text-6xl lg:text-7xl">
-                I build systems where{" "}
-                <em className="not-italic text-emerald-400">AI acts</em>,
-                edges respond,{" "}
-                <span className="text-neutral-400">and latency disappears.</span>
+                Awelechukwu Benjamin{" "}
+                <span className="text-emerald-400">Ofili</span>
               </h1>
 
-              {/* Sub-statement — role declaration */}
-              <p className="id-font-mono id-rise id-d3 mt-7 max-w-md text-sm font-light leading-loose text-neutral-400">
-                Senior Engineer — Agentic AI Integration & Edge-First Architecture.
-                I design performant, context-aware systems for the AI-native stack.
+              <p className="id-font-mono id-rise id-d3 mt-6 text-sm tracking-wide text-neutral-300">
+                {PROFILE.headline}
+              </p>
+              <p className="id-font-mono id-rise id-d3 mt-2 text-xs tracking-wide text-neutral-500">
+                {PROFILE.study}
+              </p>
+
+              <p className="id-font-mono id-rise id-d3 mt-7 max-w-md text-sm leading-loose font-light text-neutral-400">
+                {PROFILE.statement}
               </p>
 
               {/* ── Call-to-Action row ──────────────────────────────── */}
               <div className="id-rise id-d4 mt-10 flex flex-wrap items-center gap-4">
-
                 {/* Primary CTA — The Workshop */}
-                <Link href="#workshop" aria-label="View The Workshop — architectural audit">
+                <Link
+                  href="#workshop"
+                  aria-label="View The Workshop — skills and experience"
+                >
                   <Button
                     size="lg"
                     className="id-cta-primary id-font-mono rounded-none bg-emerald-500 px-8 text-sm font-medium tracking-wide text-neutral-950 transition-all duration-200 hover:bg-emerald-400 focus-visible:outline-none"
@@ -165,56 +160,38 @@ export function HeroSection() {
                 </Link>
 
                 {/* Secondary CTA — The Lab */}
-                <Link href="#lab" aria-label="View The Lab — project showcase">
-                  <Button
-                    className="id-font-mono rounded-none border border-neutral-800 bg-transparent px-8 text-sm font-medium tracking-wide text-neutral-400 transition-all duration-200 hover:border-neutral-700 hover:bg-neutral-900/50 hover:text-neutral-100 focus-visible:outline-none"
-                  >
+                <Link href="#lab" aria-label="View The Lab — selected projects">
+                  <Button className="id-font-mono rounded-none border border-neutral-800 bg-transparent px-8 text-sm font-medium tracking-wide text-neutral-400 transition-all duration-200 hover:border-neutral-700 hover:bg-neutral-900/50 hover:text-neutral-100 focus-visible:outline-none">
                     The Lab
                   </Button>
                 </Link>
 
-                {/* Secondary CTA — The Lens */}
-                <Link href="#lens" aria-label="View The Lens — editorial index">
-                  <Button
-                    className="id-font-mono rounded-none border border-neutral-800 bg-transparent px-8 text-sm font-medium tracking-wide text-neutral-400 transition-all duration-200 hover:border-neutral-700 hover:bg-neutral-900/50 hover:text-neutral-100 focus-visible:outline-none"
-                  >
-                    The Lens
+                {/* Secondary CTA — Contact */}
+                <Link href="#contact" aria-label="Get in touch">
+                  <Button className="id-font-mono rounded-none border border-neutral-800 bg-transparent px-8 text-sm font-medium tracking-wide text-neutral-400 transition-all duration-200 hover:border-neutral-700 hover:bg-neutral-900/50 hover:text-neutral-100 focus-visible:outline-none">
+                    Get in touch
                   </Button>
-                </Link>
-
-                {/* Mobile spacer / divider on small screens could go here, but flex-wrap handles it */}
-
-                {/* Featured project badge */}
-                <Link
-                  href="/lab/agentic-ai-chatbot"
-                  aria-label="Featured Project: Agentic AI Chatbot"
-                  className="id-font-mono group inline-flex items-center gap-2 rounded-none border border-neutral-800 px-4 py-2 text-xs text-neutral-500 transition-all duration-200 hover:border-emerald-700 hover:text-emerald-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-1.5 w-1.5 rounded-full bg-emerald-500 opacity-70 group-hover:opacity-100 transition-opacity"
-                  />
-                  Agentic AI Chatbot
-                  <Badge
-                    variant="outline"
-                    className="id-font-mono ml-1 rounded-none border-neutral-700 px-1.5 py-0 text-neutral-600 text-xs group-hover:border-emerald-800 group-hover:text-emerald-600"
-                  >
-                    Featured
-                  </Badge>
                 </Link>
               </div>
             </div>
 
             {/* ── Right: Status strip (spans 4 cols, offset 1) ───────── */}
             <aside
-              aria-label="Current focus areas"
+              aria-label="Location, education and availability"
               className="id-rise id-d5 flex flex-col justify-end gap-5 lg:col-span-4 lg:col-start-9"
             >
               {[
-                { label: "Specialism", value: "Agentic AI Integration" },
-                { label: "Architecture", value: "Edge-First Systems" },
-                { label: "Stack", value: "Next.js · Vercel AI SDK · tRPC" },
-                { label: "Status", value: "Open to opportunities" },
+                { label: "Based in", value: PROFILE.location },
+                {
+                  label: "Studying",
+                  value: "BSc (Hons) BCDA · Middlesex University Mauritius",
+                },
+                {
+                  label: "Qualified",
+                  value:
+                    "Advanced Diploma in Software Engineering (Distinction)",
+                },
+                { label: "Availability", value: PROFILE.availability },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -223,19 +200,18 @@ export function HeroSection() {
                   <span className="id-font-mono text-xs tracking-widest text-neutral-600 uppercase">
                     {item.label}
                   </span>
-                  <span className="id-font-mono text-xs text-neutral-300">
+                  <span className="id-font-mono text-xs leading-relaxed text-neutral-300">
                     {item.value}
                   </span>
                 </div>
               ))}
             </aside>
-
           </div>
         </header>
 
         {/* ── Engineering Principles — SECTION ───────────────────────── */}
         <section
-          aria-labelledby="principles-heading"
+          aria-labelledby="pillars-heading"
           className="relative z-10 mx-auto max-w-7xl px-6 pb-24 md:px-14 lg:px-20"
         >
           {/* Animated hairline */}
@@ -246,15 +222,15 @@ export function HeroSection() {
 
           {/* Section label */}
           <h2
-            id="principles-heading"
+            id="pillars-heading"
             className="id-font-mono id-rise id-d5 mb-10 text-xs tracking-widest text-neutral-600 uppercase"
           >
-            Engineering Principles
+            What I bring
           </h2>
 
-          {/* Principles grid — 1 col mobile → 3 col desktop */}
+          {/* Pillars grid — 1 col mobile → 3 col desktop */}
           <div className="grid grid-cols-1 gap-px bg-neutral-800 md:grid-cols-3">
-            {PRINCIPLES.map((p, i) => (
+            {PILLARS.map((p, i) => (
               <Card
                 key={p.id}
                 className={`id-card id-rise id-d${i + 5} rounded-none border border-transparent bg-neutral-950`}
@@ -271,20 +247,14 @@ export function HeroSection() {
                   </h3>
 
                   {/* Principle explanation — short declarative sentences */}
-                  <p className="id-font-mono text-xs font-light leading-relaxed text-neutral-500">
+                  <p className="id-font-mono text-xs leading-relaxed font-light text-neutral-500">
                     {p.description}
                   </p>
                 </CardContent>
               </Card>
             ))}
           </div>
-
-          {/* Footer micro-detail */}
-          <p className="id-font-mono id-rise id-d7 mt-10 text-xs text-neutral-700">
-            These principles are non-negotiable. They govern every pull request.
-          </p>
         </section>
-
       </div>
     </>
   );

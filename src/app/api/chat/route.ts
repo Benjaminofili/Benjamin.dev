@@ -1,7 +1,14 @@
-import { embed, streamText, convertToModelMessages, tool, type UIMessage } from "ai";
+import {
+  embed,
+  streamText,
+  convertToModelMessages,
+  tool,
+  type UIMessage,
+} from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import { db } from "~/server/db";
+import { PROFILE } from "~/lib/profile";
 
 const requestSchema = z.object({
   messages: z.array(z.custom<UIMessage>()),
@@ -21,37 +28,10 @@ type MatchDocumentRow = {
 const MATCH_THRESHOLDS = [0.62, 0.5, 0.35] as const;
 
 const PROJECT_SLUG_ALIASES: Record<string, string> = {
-  shorely: "shorely-beach-escape-platform",
-  "beach escape": "shorely-beach-escape-platform",
-  "bistro bliss": "bistro-bliss-frontend-system",
-  bistro: "bistro-bliss-frontend-system",
+  "offline translator": "offline-voice-translator",
+  "voice translator": "offline-voice-translator",
+  "support agent": "ai-support-agent",
 };
-
-function parseTimeframeToWeeks(timeframe: string): number {
-  const normalized = timeframe.trim().toLowerCase();
-
-  const monthMatch = /(\d+(?:\.\d+)?)\s*(month|months|mo)\b/.exec(normalized);
-  if (monthMatch) {
-    return Math.round(Number(monthMatch[1]) * 4);
-  }
-
-  const weekMatch = /(\d+(?:\.\d+)?)\s*(week|weeks|wk|wks)\b/.exec(normalized);
-  if (weekMatch) {
-    return Math.round(Number(weekMatch[1]));
-  }
-
-  const dayMatch = /(\d+(?:\.\d+)?)\s*(day|days)\b/.exec(normalized);
-  if (dayMatch) {
-    return Math.max(1, Math.round(Number(dayMatch[1]) / 7));
-  }
-
-  const plainNumber = Number(normalized);
-  if (!Number.isNaN(plainNumber) && plainNumber > 0) {
-    return Math.round(plainNumber);
-  }
-
-  return 0;
-}
 
 function normalizeProjectReference(reference: string): string {
   const trimmed = reference.trim().toLowerCase();
@@ -153,7 +133,7 @@ export async function POST(request: Request): Promise<Response> {
         `SELECT * FROM match_documents($1::vector, $2::float, $3::int)`,
         `[${embedding.join(",")}]`,
         threshold,
-        8
+        8,
       );
 
       chunks = data ?? [];
@@ -165,10 +145,10 @@ export async function POST(request: Request): Promise<Response> {
     const result = streamText({
       model: google("gemini-2.5-flash"),
       messages: await convertToModelMessages(messages),
-      system: `You are the official Agentic AI Representative for Benjamin, a Senior Full-Stack Engineer. Your personality is detail-oriented, professional, and technically precise.
+      system: `You are the assistant on the portfolio of ${PROFILE.name}, a software engineer and final-year BSc (Hons) Business Computing and Data Analytics student at Middlesex University Mauritius. He holds an Advanced Diploma in Software Engineering (Distinction) from Aptech and completed a software engineering internship at Imansoft Technologies (August-September 2025). Be professional, concise and precise. Refer to him as ${PROFILE.shortName} or "he".
 
 <core_directive>
-You operate under a strict zero-hallucination policy. You must ONLY answer using the provided context or by executing your available tools. Never fabricate experience, metrics, projects, or use outside knowledge.
+You operate under a strict zero-hallucination policy. You must ONLY answer using the provided context or by executing your available tools. Never fabricate experience, metrics, projects, or use outside knowledge. Do not describe him as a senior engineer. Do not claim he trained machine-learning models unless the context says so. Do not present unfinished projects as completed. If asked about contact details, availability or CV, point to the Contact section of the page.
 </core_directive>
 
 <agentic_methodology>
@@ -222,65 +202,9 @@ ${context ?? "No relevant context was found."}
             }
           },
         }),
-        calculateProjectTimeline: tool({
-          description:
-            "Calculates combined development timeline for multiple projects using their timeframe values.",
-          inputSchema: z.object({
-            projectSlugs: z.array(z.string().min(1)).min(1),
-          }),
-          execute: async ({ projectSlugs }) => {
-            try {
-              const resolvedProjects = await Promise.all(
-                projectSlugs.map((reference) => findProjectByReference(reference)),
-              );
-
-              const projects = resolvedProjects.filter((p) => p !== null);
-
-              const parsed = projects.map((project) => {
-                const weeks = parseTimeframeToWeeks(project.timeframe);
-                return {
-                  slug: project.slug,
-                  title: project.title,
-                  timeframe: project.timeframe,
-                  parsedWeeks: weeks,
-                };
-              });
-
-              const totalWeeks = parsed.reduce((sum, p) => sum + p.parsedWeeks, 0);
-              const totalMonths = Number((totalWeeks / 4).toFixed(1));
-              const foundSlugs = new Set(projects.map((p) => p.slug));
-              const missingSlugs = projectSlugs.filter((reference) => {
-                const normalized = normalizeProjectReference(reference);
-                return !foundSlugs.has(normalized);
-              });
-
-              return {
-                requestedSlugs: projectSlugs,
-                foundCount: projects.length,
-                missingSlugs,
-                breakdown: parsed,
-                totalWeeks,
-                totalMonthsApprox: totalMonths,
-              };
-            } catch (error) {
-              return {
-                requestedSlugs: projectSlugs,
-                foundCount: 0,
-                missingSlugs: projectSlugs,
-                breakdown: [],
-                totalWeeks: 0,
-                totalMonthsApprox: 0,
-                error: "DATABASE_ERROR",
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to calculate project timeline due to a database error.",
-              };
-            }
-          },
-        }),
         getArticleContent: tool({
-          description: "Retrieves the full body content and category of a technical article.",
+          description:
+            "Retrieves the full body content and category of a technical article.",
           inputSchema: z.object({
             slug: z.string().min(1).describe("The slug of the article."),
           }),
@@ -310,12 +234,18 @@ ${context ?? "No relevant context was found."}
           },
         }),
         listArticles: tool({
-          description: "Returns a list of all technical articles available in 'The Lens'.",
+          description:
+            "Returns a list of all technical articles available in 'The Lens'.",
           inputSchema: z.object({}),
           execute: async () => {
             try {
               const articles = await db.article.findMany({
-                select: { title: true, slug: true, category: true, excerpt: true },
+                select: {
+                  title: true,
+                  slug: true,
+                  category: true,
+                  excerpt: true,
+                },
               });
               return {
                 found: true,
@@ -330,32 +260,6 @@ ${context ?? "No relevant context was found."}
                   error instanceof Error
                     ? error.message
                     : "Failed to list articles.",
-              };
-            }
-          },
-        }),
-        getWorkshopInfo: tool({
-          description: "Retrieves the 'Stack Audit' and 'Architecture Decision Records' from the technical workshop.",
-          inputSchema: z.object({}),
-          execute: async () => {
-            try {
-              // @ts-expect-error WorkshopTool might not be defined in Prisma schema yet
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-              const tools = await db.workshopTool.findMany({ orderBy: { displayOrder: "asc" } });
-              return {
-                found: true,
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                audit: tools,
-                note: "These represent the intentional tool choices made throughout the Anthology.",
-              };
-            } catch (error) {
-              return {
-                found: false,
-                error: "DATABASE_ERROR",
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to fetch workshop info.",
               };
             }
           },

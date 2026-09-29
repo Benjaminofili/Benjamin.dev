@@ -2,6 +2,7 @@ import { embed } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { z } from "zod";
 import { db } from "~/server/db";
+import { IDENTITY_BLOCKS } from "~/lib/profile";
 
 const envSchema = z.object({
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
@@ -15,13 +16,6 @@ type EmbeddingRow = {
     title: string;
   };
 };
-
-const IDENTITY_BLOCKS = [
-  "Identity: Benjamin. Role: Senior Engineer - Agentic AI Integration.",
-  "Engineering Principle: Type-Safe Data Flow.",
-  "Engineering Principle: Edge-First Architecture.",
-  "Engineering Principle: RAG Pipeline Mastery.",
-] as const;
 
 function formatProjectBlock(project: {
   id: string;
@@ -88,14 +82,16 @@ export async function POST(): Promise<Response> {
       }),
     ]);
 
-    const identityRows: EmbeddingRow[] = IDENTITY_BLOCKS.map((content, index) => ({
-      content,
-      metadata: {
-        type: "identity",
-        id: `identity-${index + 1}`,
-        title: "Chapter I: Identity",
-      },
-    }));
+    const identityRows: EmbeddingRow[] = IDENTITY_BLOCKS.map(
+      (content, index) => ({
+        content,
+        metadata: {
+          type: "identity",
+          id: `identity-${index + 1}`,
+          title: "Chapter I: Identity",
+        },
+      }),
+    );
 
     const rowsToEmbed: EmbeddingRow[] = [
       ...projects.map(formatProjectBlock),
@@ -128,7 +124,7 @@ export async function POST(): Promise<Response> {
         `INSERT INTO document_chunks (id, content, metadata, embedding) VALUES (gen_random_uuid(), $1, $2::jsonb, $3::vector)`,
         row.content,
         JSON.stringify(row.metadata),
-        `[${embedding.join(",")}]`
+        `[${embedding.join(",")}]`,
       );
 
       insertedCount += 1;
@@ -148,7 +144,8 @@ export async function POST(): Promise<Response> {
     return Response.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Unknown ingestion error",
+        error:
+          error instanceof Error ? error.message : "Unknown ingestion error",
       },
       { status: 500 },
     );
